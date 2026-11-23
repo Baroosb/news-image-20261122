@@ -18,6 +18,16 @@ carry coloured pictograms and the story's own big number where it has
 one; the world map is a filled landmass on an ocean panel with coloured
 numbered pins; the tiers ride in small coloured pills.
 
+Version 5 applies the owner + Musehood panel critique of v4: the
+date shrinks from 168px to 104px and joins a composed masthead, and
+the vertical space that frees goes to the three lead panels, which
+grow from 140px to 272px tall — the Gulf map gains separate
+Al-Riffa and Awali markers, arrowheads and bigger labels, the COP31
+draft document and overtime clock are drawn large with a NO DEAL
+stamp, and the Khartoum dusk skyline gains a background row of
+buildings, bigger smoke and larger drones. Story content is
+unchanged from v4.
+
 The page is drawn programmatically with Pillow at 2048x2048
 (entry-master.png) and downscaled to the 1024x1024 entry.png that
 main.py ships. Every text block is measured and fitted into its zone;
@@ -517,77 +527,114 @@ def lead_body(draw, x, y, lead, col_w, zone_h):
 # Each lead illustration is a full-colour panel drawn in code: a Gulf
 # mini-map, a COP31 document/clock panel, a Khartoum dusk skyline.
 def art_cop(d, x, y, w_, h):
-    """COP31: slate name block, the draft text with 'fossil fuels'
-    struck out in oxblood, and an overtime pie-clock."""
+    """COP31, drawn large: slate name block, the draft document with
+    'fossil fuels' struck out in oxblood and a NO DEAL stamp, and a
+    big overtime pie-clock."""
     d.rectangle([x, y, x + w_, y + h], fill=(238, 233, 219))
     # summit name block
-    bw = 172
+    bw = 150
     d.rectangle([x, y, x + bw, y + h], fill=SLATE)
-    f1 = serif_b(40)
+    f1 = serif_b(34)
     _register("cop panel COP31", d.textlength("COP31", font=f1), bw - 16)
-    d.text((x + bw / 2, y + 26), "COP31", font=f1, fill=WHITE, anchor="ma")
-    f2 = dsans_b(16)
+    d.text((x + bw / 2, y + 34), "COP31", font=f1, fill=WHITE, anchor="ma")
+    f2 = dsans_b(15)
     draw_tracked(d, x + (bw - tracked_width(d, "ANTALYA", f2, 3)) / 2,
-                 y + 82, "ANTALYA", f2, 3, WHITE)
+                 y + 94, "ANTALYA", f2, 3, WHITE)
     f3 = dsans_b(11)
     for i, ln in enumerate(["UN CLIMATE", "SUMMIT"]):
         draw_tracked(d, x + (bw - tracked_width(d, ln, f3, 2)) / 2,
-                     y + 106 + i * 16, ln, f3, 2, (196, 208, 210))
-    # the draft document
-    dx, dy, dw, dh = x + 178, y + 12, 218, h - 24
+                     y + 120 + i * 17, ln, f3, 2, (196, 208, 210))
+    d.line([x + 22, y + h - 62, x + bw - 22, y + h - 62], fill=(196, 208, 210),
+           width=2)
+    f4 = dsans_b(12)
+    draw_tracked(d, x + (bw - tracked_width(d, "TALKS END", f4, 2)) / 2,
+                 y + h - 48, "TALKS END", f4, 2, WHITE)
+    # the draft document, large, with ruled lines top and bottom
+    dx, dy, dw, dh = x + 166, y + 16, 246, h - 32
     d.rectangle([dx, dy, dx + dw, dy + dh], fill=(252, 250, 244),
                 outline=MID, width=2)
-    ft = dsans_b(14)
-    d.text((dx + 14, dy + 9), "DRAFT TEXT", font=ft, fill=INK)
-    for i, lw in enumerate([0.92, 0.80, 0.88]):
-        ly = dy + 36 + i * 12
-        d.line([dx + 14, ly, dx + 14 + (dw - 28) * lw, ly],
+    ft = dsans_b(15)
+    d.text((dx + 16, dy + 12), "DRAFT TEXT", font=ft, fill=INK)
+    for i, lw in enumerate([0.94, 0.84, 0.90, 0.78, 0.88]):
+        ly = dy + 46 + i * 14
+        d.line([dx + 16, ly, dx + 16 + (dw - 32) * lw, ly],
                fill=(168, 160, 148), width=4)
-    ff = lsans_b(25)
+    ff = lsans_b(34)
     strike = "fossil fuels"
-    _register("cop panel strike", d.textlength(strike, font=ff), dw - 24)
-    d.text((dx + 14, dy + 66), strike, font=ff, fill=OXB)
+    _register("cop panel strike", d.textlength(strike, font=ff), dw - 28)
+    d.text((dx + 16, dy + 122), strike, font=ff, fill=OXB)
     sw = d.textlength(strike, font=ff)
-    d.line([dx + 11, dy + 81, dx + 17 + sw, dy + 81], fill=OXB, width=4)
-    fc = dsans_b(11)
-    d.text((dx + 14, dy + 94), "NOT MENTIONED", font=fc, fill=MID)
-    # overtime pie-clock
-    cx, cy, r = x + w_ - 88, y + h / 2 - 18, 54
+    d.line([dx + 13, dy + 144, dx + 19 + sw, dy + 144], fill=OXB, width=5)
+    fc = dsans_b(12)
+    d.text((dx + 16, dy + 158), "NOT MENTIONED", font=fc, fill=MID)
+    for i, lw in enumerate([0.88, 0.80]):
+        ly = dy + 190 + i * 14
+        d.line([dx + 16, ly, dx + 16 + (dw - 32) * lw, ly],
+               fill=(168, 160, 148), width=4)
+    # NO DEAL stamp, bottom-right of the document
+    sx0, sy0, sx1, sy1 = dx + 106, dy + dh - 52, dx + dw - 14, dy + dh - 10
+    d.rectangle([sx0, sy0, sx1, sy1], outline=OXB, width=3)
+    d.rectangle([sx0 + 4, sy0 + 4, sx1 - 4, sy1 - 4], outline=OXB, width=1)
+    fst = serif_b(20)
+    _register("cop panel stamp", d.textlength("NO DEAL", font=fst),
+              sx1 - sx0 - 16)
+    d.text(((sx0 + sx1) / 2, (sy0 + sy1) / 2), "NO DEAL", font=fst,
+           fill=OXB, anchor="mm")
+    # overtime pie-clock, big
+    cx, cy, r = x + w_ - 92, y + 102, 74
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(252, 250, 244),
               outline=INK, width=3)
     d.pieslice([cx - r, cy - r, cx + r, cy + r], start=-90, end=0, fill=OXB)
     for a in range(0, 360, 30):
         rad = math.radians(a)
-        d.line([cx + math.cos(rad) * (r - 9), cy + math.sin(rad) * (r - 9),
-                cx + math.cos(rad) * (r - 3), cy + math.sin(rad) * (r - 3)],
+        d.line([cx + math.cos(rad) * (r - 12), cy + math.sin(rad) * (r - 12),
+                cx + math.cos(rad) * (r - 4), cy + math.sin(rad) * (r - 4)],
                fill=INK, width=2)
-    d.line([cx, cy, cx + 6, cy - r * 0.62], fill=INK, width=4)
-    d.line([cx, cy, cx + r * 0.55, cy + 10], fill=INK, width=4)
-    d.ellipse([cx - 5, cy - 5, cx + 5, cy + 5], fill=INK)
-    fo = dsans_b(15)
+    d.line([cx, cy, cx + 8, cy - r * 0.62], fill=INK, width=5)
+    d.line([cx, cy, cx + r * 0.55, cy + 13], fill=INK, width=5)
+    d.ellipse([cx - 6, cy - 6, cx + 6, cy + 6], fill=INK)
+    fo = dsans_b(16)
     label = "OVERTIME"
     _register("cop panel overtime", tracked_width(d, label, fo, 2), 176)
-    draw_tracked(d, cx - tracked_width(d, label, fo, 2) / 2, y + h - 30,
+    draw_tracked(d, cx - tracked_width(d, label, fo, 2) / 2, cy + r + 14,
                  label, fo, 2, OXB)
 
 
 def art_gulf(d, x, y, w_, h):
-    """A drawn mini-map of the Gulf: tan land, blue sea, dashed oxblood
-    strike routes from Iran to Bahrain, a starburst on the island."""
+    """A drawn map of the Gulf, large: tan land, blue sea, dashed
+    oxblood strike routes with arrowheads from Iran to the two
+    Bahrain bases — Al-Riffa on the island, Awali just south."""
     d.rectangle([x, y, x + w_, y + h], fill=SEA)
 
     def P(u, v):
         return (x + u * w_, y + v * h)
 
+    def bez(p0, p1, p2, t):
+        return ((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0]
+                + t ** 2 * p2[0],
+                (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1]
+                + t ** 2 * p2[1])
+
+    def arrowhead(p0, p1, p2):
+        tip = bez(p0, p1, p2, 0.965)
+        back = bez(p0, p1, p2, 0.86)
+        vx, vy = tip[0] - back[0], tip[1] - back[1]
+        n = math.hypot(vx, vy) or 1.0
+        vx, vy = vx / n, vy / n
+        bx_, by_ = tip[0] - vx * 17, tip[1] - vy * 17
+        d.polygon([tip, (bx_ - vy * 8, by_ + vx * 8),
+                   (bx_ + vy * 8, by_ - vx * 8)], fill=OXB)
+
     # Iran, across the top
     iran = [(0.50, 0.0), (1.0, 0.0), (1.0, 0.54), (0.95, 0.52),
-            (0.90, 0.40), (0.83, 0.43), (0.77, 0.32), (0.68, 0.36),
-            (0.61, 0.25), (0.55, 0.28), (0.50, 0.16)]
+            (0.90, 0.40), (0.83, 0.43), (0.77, 0.32), (0.715, 0.335),
+            (0.68, 0.36), (0.645, 0.30), (0.61, 0.25), (0.575, 0.265),
+            (0.55, 0.28), (0.50, 0.16)]
     d.polygon([P(u, v) for u, v in iran], fill=TAN)
     # Arabia, bottom-left, its coast facing the Gulf
     arabia = [(0.0, 0.30), (0.14, 0.36), (0.23, 0.44), (0.30, 0.55),
-              (0.37, 0.66), (0.47, 0.79), (0.58, 0.90), (0.68, 1.0),
-              (0.0, 1.0)]
+              (0.335, 0.605), (0.37, 0.66), (0.47, 0.79), (0.58, 0.90),
+              (0.68, 1.0), (0.0, 1.0)]
     d.polygon([P(u, v) for u, v in arabia], fill=TAN)
     # Qatar, a small peninsula on the Arabian coast
     qatar = [(0.252, 0.475), (0.285, 0.385), (0.315, 0.40), (0.322, 0.50),
@@ -597,48 +644,60 @@ def art_gulf(d, x, y, w_, h):
     oman = [(0.80, 1.0), (0.86, 0.80), (0.915, 0.66), (0.945, 0.545),
             (0.965, 0.60), (1.0, 0.60), (1.0, 1.0)]
     d.polygon([P(u, v) for u, v in oman], fill=TAN)
-    # Bahrain island
-    bx, by = P(0.345, 0.475)
-    d.ellipse([bx - 8, by - 6, bx + 8, by + 6], fill=TAN, outline=INK,
+    # two low islets in the Gulf sea
+    for (iu, iv, ir) in [(0.52, 0.56, 5), (0.60, 0.64, 4)]:
+        ix, iy = P(iu, iv)
+        d.ellipse([ix - ir, iy - ir * 0.7, ix + ir, iy + ir * 0.7], fill=TAN)
+    # Bahrain island (Al-Riffa) and the Awali marker just south of it
+    bx, by = P(0.345, 0.44)
+    d.ellipse([bx - 11, by - 8, bx + 11, by + 8], fill=TAN, outline=INK,
               width=2)
-    # dashed strike routes, Iran coast -> Bahrain
-    dashed_bezier(d, P(0.70, 0.345), P(0.55, 0.02), (bx, by), OXB, 4)
-    dashed_bezier(d, P(0.79, 0.415), P(0.62, 0.08), (bx, by), OXB, 4)
-    starburst(d, bx, by, 21, OXB)
-    d.ellipse([bx - 4, by - 4, bx + 4, by + 4], fill=INK)
+    ax_, ay_ = P(0.315, 0.575)
+    # dashed strike routes, Iran coast -> both bases, with arrowheads
+    r1 = (P(0.70, 0.345), P(0.55, 0.02), (bx, by))
+    r2 = (P(0.79, 0.415), P(0.62, 0.08), (bx, by))
+    r3 = (P(0.66, 0.35), P(0.44, 0.10), (ax_, ay_))
+    for rt in (r1, r2, r3):
+        dashed_bezier(d, *rt, OXB, 5)
+        arrowhead(*rt)
+    starburst(d, bx, by, 30, OXB)
+    d.ellipse([bx - 5, by - 5, bx + 5, by + 5], fill=INK)
+    starburst(d, ax_, ay_, 22, OXB)
+    d.ellipse([ax_ - 4, ay_ - 4, ax_ + 4, ay_ + 4], fill=INK)
     # labels
-    fi = dsans_b(23)
-    _register("gulf label IRAN", tracked_width(d, "IRAN", fi, 5), 200)
-    draw_tracked(d, *P(0.76, 0.10), "IRAN", fi, 5, INK)
-    fs = dsans_b(15)
+    fi = dsans_b(30)
+    _register("gulf label IRAN", tracked_width(d, "IRAN", fi, 5), 220)
+    draw_tracked(d, *P(0.755, 0.09), "IRAN", fi, 5, INK)
+    fs = dsans_b(19)
     _register("gulf label SAUDI", tracked_width(d, "SAUDI ARABIA", fs, 2),
-              190)
-    draw_tracked(d, *P(0.035, 0.80), "SAUDI ARABIA", fs, 2, INK)
-    fq = dsans_b(13)
-    _register("gulf label QATAR", tracked_width(d, "QATAR", fq, 2), 90)
-    draw_tracked(d, *P(0.145, 0.415), "QATAR", fq, 2, INK)
-    fb = dsans_b(17)
-    _register("gulf label BAHRAIN", tracked_width(d, "BAHRAIN", fb, 2), 150)
-    draw_tracked(d, *P(0.155, 0.13), "BAHRAIN", fb, 2, INK)
-    fa = dsans_b(10)
-    _register("gulf label bases",
-              tracked_width(d, "AL-RIFFA · AWALI BASES", fa, 0.5), 170)
-    draw_tracked(d, *P(0.155, 0.225), "AL-RIFFA · AWALI BASES", fa, 0.5,
-                 OXB)
-    fg = dsans(16)
+              240)
+    draw_tracked(d, *P(0.03, 0.82), "SAUDI ARABIA", fs, 2, INK)
+    fq = dsans_b(16)
+    _register("gulf label QATAR", tracked_width(d, "QATAR", fq, 2), 110)
+    draw_tracked(d, *P(0.13, 0.40), "QATAR", fq, 2, INK)
+    fb = dsans_b(22)
+    _register("gulf label BAHRAIN", tracked_width(d, "BAHRAIN", fb, 2), 190)
+    draw_tracked(d, *P(0.15, 0.10), "BAHRAIN", fb, 2, INK)
+    fa = dsans_b(13)
+    _register("gulf label AL-RIFFA", tracked_width(d, "AL-RIFFA", fa, 1),
+              130)
+    draw_tracked(d, *P(0.15, 0.205), "AL-RIFFA", fa, 1, OXB)
+    _register("gulf label AWALI", tracked_width(d, "AWALI", fa, 1), 100)
+    draw_tracked(d, *P(0.115, 0.635), "AWALI", fa, 1, OXB)
+    fg = dsans(20)
     _register("gulf label THE GULF", tracked_width(d, "THE GULF", fg, 3),
-              150)
-    draw_tracked(d, *P(0.545, 0.70), "THE GULF", fg, 3, (40, 60, 68))
-    fh = dsans_b(10)
+              190)
+    draw_tracked(d, *P(0.53, 0.72), "THE GULF", fg, 3, (40, 60, 68))
+    fh = dsans_b(13)
     _register("gulf label HORMUZ",
-              tracked_width(d, "STRAIT OF HORMUZ", fh, 0.5), 200)
-    draw_tracked(d, *P(0.655, 0.475), "STRAIT OF HORMUZ", fh, 0.5,
+              tracked_width(d, "STRAIT OF HORMUZ", fh, 0.5), 230)
+    draw_tracked(d, *P(0.63, 0.47), "STRAIT OF HORMUZ", fh, 0.5,
                  (40, 60, 68))
     # compass
-    nx, ny = P(0.035, 0.10)
-    d.polygon([(nx, ny - 13), (nx + 6, ny + 6), (nx, ny + 1),
-               (nx - 6, ny + 6)], fill=INK)
-    d.text((nx, ny + 9), "N", font=dsans_b(13), fill=INK, anchor="ma")
+    nx, ny = P(0.04, 0.09)
+    d.polygon([(nx, ny - 18), (nx + 8, ny + 8), (nx, ny + 2),
+               (nx - 8, ny + 8)], fill=INK)
+    d.text((nx, ny + 12), "N", font=dsans_b(16), fill=INK, anchor="ma")
 
 
 def art_khartoum(d, x, y, w_, h):
@@ -663,53 +722,62 @@ def art_khartoum(d, x, y, w_, h):
         d.line([x, yy, x + w_, yy], fill=col)
         yy += 3
     d.rectangle([x, horizon, x + w_, y + h], fill=(52, 44, 38))
-    # low sun
-    sx, sy, sr = x + w_ * 0.80, horizon - 16, 27
+    # low sun, large
+    sx, sy, sr = x + w_ * 0.80, horizon - 24, 40
     d.ellipse([sx - sr, sy - sr, sx + sr, sy + sr], fill=(243, 216, 150))
-    # skyline silhouette
     base = y + h
     heights = [0.30, 0.46, 0.36, 0.58, 0.42, 0.52, 0.34, 0.48, 0.38, 0.55,
                0.40, 0.44]
+    # background skyline: a lighter, lower row behind for depth
+    bx = x + 2
+    i = 0
+    while bx < x + w_ - 20:
+        bw = w_ * 0.055
+        bh = h * heights[(i + 3) % len(heights)] * 0.55
+        d.rectangle([bx, base - bh, bx + bw, base], fill=(84, 72, 62))
+        bx += bw + 9
+        i += 1
+    # foreground skyline silhouette
     bx = x + 6
     tops = []
     i = 0
-    while bx < x + w_ - 34:
-        bw = w_ * 0.066
+    while bx < x + w_ - 30:
+        bw = w_ * 0.052
         bh = h * heights[i % len(heights)]
         d.rectangle([bx, base - bh, bx + bw, base], fill=INK)
         tops.append((bx + bw / 2, base - bh))
-        bx += bw + 6
+        bx += bw + 5
         i += 1
-    # the UN tower: taller, with a flag and the letters
-    ux, uw = x + w_ * 0.435, w_ * 0.085
-    uh = h * 0.72
+    # the UN tower: taller, prominent, with a flag and the letters
+    ux, uw = x + w_ * 0.435, w_ * 0.09
+    uh = h * 0.74
     d.rectangle([ux, base - uh, ux + uw, base], fill=INK)
-    d.line([ux + uw / 2, base - uh, ux + uw / 2, base - uh - 20],
+    d.line([ux + uw / 2, base - uh, ux + uw / 2, base - uh - 26],
            fill=INK, width=3)
-    d.polygon([(ux + uw / 2, base - uh - 20), (ux + uw / 2 + 24,
-               base - uh - 14), (ux + uw / 2, base - uh - 8)],
+    d.polygon([(ux + uw / 2, base - uh - 26), (ux + uw / 2 + 30,
+               base - uh - 18), (ux + uw / 2, base - uh - 10)],
               fill=(120, 170, 205))
-    fu = dsans_b(21)
+    fu = dsans_b(26)
     _register("khartoum UN", d.textlength("UN", font=fu), uw)
-    d.text((ux + uw / 2, base - uh + 14), "UN", font=fu, fill=WHITE,
+    d.text((ux + uw / 2, base - uh + 16), "UN", font=fu, fill=WHITE,
            anchor="ma")
-    # smoke plumes: layered ellipses drifting up-right from two roofs
-    for (px, py) in [tops[2], tops[7]]:
-        for k in range(4):
-            ex = px + k * 17
-            ey = py - 12 - k * 15
-            er = 13 + k * 6
-            shade = (140 + k * 22, 132 + k * 22, 124 + k * 21)
+    # smoke plumes: bigger layered ellipses drifting up-right
+    for (px, py) in [tops[2], tops[8]]:
+        for k in range(5):
+            ex = px + k * 21
+            ey = py - 14 - k * 17
+            er = 16 + k * 8
+            shade = (140 + k * 20, 132 + k * 20, 124 + k * 19)
             d.ellipse([ex - er, ey - er * 0.62, ex + er, ey + er * 0.62],
                       fill=shade)
     # blast starbursts on the skyline
-    starburst(d, tops[4][0], tops[4][1] + 4, 15, OXB)
-    starburst(d, tops[9][0], tops[9][1] + 4, 13, OXB)
-    # drones: filled quadcopter silhouettes
-    for (du, dv, s) in [(0.16, 0.20, 1.0), (0.52, 0.13, 0.78),
-                        (0.68, 0.30, 0.62)]:
+    starburst(d, tops[4][0], tops[4][1] + 4, 22, OXB)
+    starburst(d, tops[10][0], tops[10][1] + 4, 19, OXB)
+    # drones: filled quadcopter silhouettes, larger
+    for (du, dv, s) in [(0.15, 0.17, 1.0), (0.55, 0.10, 0.8),
+                        (0.72, 0.27, 0.62)]:
         cx, cy = x + w_ * du, y + h * dv
-        r = 24 * s
+        r = 34 * s
         for (ax, ay) in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
             ex, ey = cx + ax * r, cy + ay * r * 0.62
             d.line([cx, cy, ex, ey], fill=INK, width=max(3, int(5 * s)))
@@ -904,35 +972,47 @@ def render():
     # top microtext row
     lf = fit_tracked(d, "microtext left", "THE WORLD IN ONE DAY", dsans_b,
                      24, 18, 4, CW * 0.42)
-    draw_tracked(d, M, 26, "THE WORLD IN ONE DAY", lf, 4, INK)
+    draw_tracked(d, M, 22, "THE WORLD IN ONE DAY", lf, 4, INK)
     tag = ("37 STORIES · 7 REGIONS · EVERY ONE DATED "
            "SUNDAY 22 NOVEMBER 2026")
     tf = fit_tracked(d, "microtext right", tag, dsans_b, 23, 17, 2,
                      CW * 0.60)
     tw = tracked_width(d, tag, tf, 2)
-    draw_tracked(d, right - tw, 27, tag, tf, 2, MID)
+    draw_tracked(d, right - tw, 23, tag, tf, 2, MID)
 
-    # the date, as large as the measure allows
+    # the masthead as one composed unit: the date at 104px (v4 set it
+    # at 168, a fifth of the page) with a small edition block filling
+    # the measure to its right, then the standfirst under both
     date = "22 November 2026"
-    df = fit_oneline(d, "date display", date, serif_b, 168, 132, CW)
-    d.text((M, 56), date, font=df, fill=INK)
+    df = fit_oneline(d, "date display", date, serif_b, 104, 92, CW * 0.62)
+    d.text((M, 48), date, font=df, fill=INK)
+    eb1 = "Sunday edition"
+    ef1 = fit_oneline(d, "edition block title", eb1, serif_b, 27, 22,
+                      CW * 0.34)
+    ew1 = d.textlength(eb1, font=ef1)
+    d.text((right - ew1, 60), eb1, font=ef1, fill=INK)
+    eb2 = "All 37 stories dated 22 November 2026"
+    ef2 = fit_oneline(d, "edition block line", eb2, lsans, 16, 14,
+                      CW * 0.34)
+    ew2 = d.textlength(eb2, font=ef2)
+    d.text((right - ew2, 98), eb2, font=ef2, fill=MID)
 
     # standfirst: the three lead headlines, italic, diamond-separated
     stand = ("COP31 ends with no deal at all ◆ Iran strikes US bases in "
              "Bahrain ◆ Drones hit Khartoum, and a UN building")
     sf = fit_oneline(d, "standfirst", stand, serif_i, 30, 24, CW)
-    d.text((M + 2, 210), stand, font=sf, fill=MID)
-    DIV1 = 252
+    d.text((M + 2, 152), stand, font=sf, fill=MID)
+    DIV1 = 186
     divider(DIV1)
 
     # stat strip: ink serif figures on a shared baseline, captions in
     # their own columns, hairline uprights between the columns
     col_w = CW / 6
-    base_y = DIV1 + 76
+    base_y = DIV1 + 72
     for i, (big, cap) in enumerate(STATS):
         cx = M + i * col_w
         if i:
-            d.line([cx, DIV1 + 18, cx, DIV1 + 118], fill=HAIR, width=2)
+            d.line([cx, DIV1 + 16, cx, DIV1 + 100], fill=HAIR, width=2)
         bf = fit_oneline(d, f"stat {big}", big, serif_b, 100, 50,
                          col_w - 20)
         d.text((cx + 10, base_y), big, font=bf, fill=INK, anchor="ls")
@@ -943,7 +1023,7 @@ def render():
     # region tally, high on the page as in the winning entries: an ink
     # label block, then one coloured segmented bar with the region
     # names and counts set inside their segments, in white
-    RY = 398
+    RY = DIV1 + 136
     lab_w = 168
     lf2 = fit_tracked(d, "region label", "BY REGION", dsans_b, 16, 13, 2,
                       lab_w - 16)
@@ -967,100 +1047,101 @@ def render():
         draw_tracked(d, cx + (wseg - tw3) / 2, RY + 8, label, lf3, 1,
                      WHITE)
         cx += wseg
-    DIV2 = 440
+    DIV2 = RY + 36
     divider(DIV2)
 
     # leads: a coloured header band (number + kicker + tier pill), the
     # illustrated panel, serif headline, drop-cap body, source + pill
-    y0 = 452
+    y0 = DIV2 + 8
     lead_w = 597
     lead_gap = 32
+    ART_H = 272
     for i, lead in enumerate(LEADS):
         x = M + i * (lead_w + lead_gap)
         region = LEAD_REGION[lead["num"]]
         col = REGION_COLORS[region]
-        d.rectangle([x, y0, x + lead_w, y0 + 34], fill=col)
+        d.rectangle([x, y0, x + lead_w, y0 + 30], fill=col)
         nf = serif_b(23)
         num_s = f"{lead['num']:02d}"
         _register(f"lead{lead['num']} band num",
                   d.textlength(num_s, font=nf), 60)
-        d.text((x + 12, y0 + 4), num_s, font=nf, fill=WHITE)
+        d.text((x + 12, y0 + 3), num_s, font=nf, fill=WHITE)
         pw = pill_width(d, lead["tier"], 13)
         kf = fit_tracked(d, f"lead{lead['num']} kicker", lead["kicker"],
                          dsans_b, 17, 13, 3, lead_w - 70 - pw - 24)
-        draw_tracked(d, x + 62, y0 + 8, lead["kicker"], kf, 3, WHITE)
-        pill(d, x + lead_w - pw - 8, y0 + 5, lead["tier"], 13, light=True)
-        ay = y0 + 42
-        ART[lead["art"]](d, x, ay, lead_w, 140)
-        d.rectangle([x, ay, x + lead_w, ay + 140], outline=INK, width=2)
+        draw_tracked(d, x + 62, y0 + 7, lead["kicker"], kf, 3, WHITE)
+        pill(d, x + lead_w - pw - 8, y0 + 3, lead["tier"], 13, light=True)
+        ay = y0 + 36
+        ART[lead["art"]](d, x, ay, lead_w, ART_H)
+        d.rectangle([x, ay, x + lead_w, ay + ART_H], outline=INK, width=2)
         hf, hlines, hlead = fit_box(d, f"lead{lead['num']} headline",
                                     lead["headline"], serif_b, 46, 30,
                                     lead_w, 66, 1.02)
-        text_block(d, x, ay + 150, hlines, hf, hlead)
-        lead_body(d, x, ay + 224, lead, lead_w, 112)
-        sy = ay + 336
+        text_block(d, x, ay + ART_H + 10, hlines, hf, hlead)
+        lead_body(d, x, ay + ART_H + 84, lead, lead_w, 112)
+        sy = ay + ART_H + 196
         pw2 = pill_width(d, lead["tier"], 13)
         sf2 = fit_oneline(d, f"lead{lead['num']} source", lead["source"],
                           lsans, 18, 14, lead_w - pw2 - 16)
         d.text((x, sy + 2), lead["source"], font=sf2, fill=MID)
         pill(d, x + lead_w - pw2, sy, lead["tier"], 13)
-    DIV3 = 866
+    DIV3 = y0 + 530
     divider(DIV3)
 
     # mid cards, two rows of five: numeral + place + a colour rule,
     # pictogram chip with the story's big figure, headline, body,
     # source + tier pill
-    y0 = 878
+    y0 = DIV3 + 8
     card_w = 345
     card_gap = 32
-    row_h = 247
+    row_h = 233
     for idx, card in enumerate(CARDS):
         row, col_i = divmod(idx, 5)
         x = M + col_i * (card_w + card_gap)
-        y = y0 + row * (row_h + 10)
+        y = y0 + row * (row_h + 4)
         region = card["region"]
         col = REGION_COLORS[region]
         num = f"{card['num']:02d}"
-        nf = serif_b(29)
+        nf = serif_b(27)
         num_w = d.textlength(num, font=nf)
         d.text((x, y), num, font=nf, fill=INK)
         kf = fit_tracked(d, f"card{card['num']} kicker", card["place"],
                          dsans_b, 15, 12, 2.5, card_w - num_w - 9)
-        draw_tracked(d, x + num_w + 9, y + 7, card["place"], kf, 2.5, MID)
-        d.rectangle([x, y + 34, x + card_w, y + 38], fill=col)
-        draw_icon(d, x, y + 44, 44, card["art"], region)
+        draw_tracked(d, x + num_w + 9, y + 6, card["place"], kf, 2.5, MID)
+        d.rectangle([x, y + 31, x + card_w, y + 35], fill=col)
+        draw_icon(d, x, y + 38, 40, card["art"], region)
         if card["num"] in CARD_STAT:
             big, capword = CARD_STAT[card["num"]]
             bf = fit_oneline(d, f"card{card['num']} stat", big, serif_b,
                              48, 28, card_w - 60)
             bw2 = d.textlength(big, font=bf)
-            d.text((x + card_w - bw2, y + 42), big, font=bf, fill=col)
+            d.text((x + card_w - bw2, y + 38), big, font=bf, fill=col)
             cf2 = fit_tracked(d, f"card{card['num']} stat caption",
                               capword, dsans_b, 13, 10, 2, card_w - 60)
             cw2 = tracked_width(d, capword, cf2, 2)
-            draw_tracked(d, x + card_w - cw2, y + 92, capword, cf2, 2,
+            draw_tracked(d, x + card_w - cw2, y + 86, capword, cf2, 2,
                          MID)
         hf, hlines, hlead = fit_box(d, f"card{card['num']} headline",
                                     card["headline"], lsans_b, 27, 19,
                                     card_w, 42, 1.04)
-        text_block(d, x, y + 104, hlines, hf, hlead)
+        text_block(d, x, y + 98, hlines, hf, hlead)
         bf2, blines, blead = fit_box(d, f"card{card['num']} body",
                                      card["body"], lsans, 20, 15, card_w,
-                                     66, 1.25)
-        text_block(d, x, y + 150, blines, bf2, blead, fill=INK)
-        sy = y + 220
+                                     60, 1.25)
+        text_block(d, x, y + 144, blines, bf2, blead, fill=INK)
+        sy = y + 208
         pw = pill_width(d, card["tier"], 12)
         sf3 = fit_oneline(d, f"card{card['num']} source", card["source"],
                           lsans, 17, 13, card_w - pw - 14)
         d.text((x, sy + 3), card["source"], font=sf3, fill=MID)
         pill(d, x + card_w - pw, sy, card["tier"], 12)
-    DIV4 = 1392
+    DIV4 = y0 + 476
     divider(DIV4)
 
     # map + briefs band. The briefs are LOCKED at Liberation Sans 22
     # with 30px leading (11px / 15px at entry scale): items 14-25 run
     # in one column beside the map, items 26-37 continue below it.
-    hy = 1404
+    hy = DIV4 + 8
     hf1 = fit_tracked(d, "map heading", "WHERE IT HAPPENED", dsans_b, 19,
                       15, 3, 850)
     draw_tracked(d, M, hy, "WHERE IT HAPPENED", hf1, 3, INK)
@@ -1069,7 +1150,7 @@ def render():
     ah = "ALSO ON SUNDAY — 24 MORE STORIES"
     hf2 = fit_tracked(d, "also heading", ah, dsans_b, 19, 15, 3, ba_w)
     draw_tracked(d, ba_x, hy, ah, hf2, 3, INK)
-    ry = 1432
+    ry = hy + 24
     draw_map(d, M, ry, 850, 280)
     cap = "Each number is the story with that number on this page."
     cf = fit_oneline(d, "map caption", cap, lsans, 16, 13, 848)
@@ -1113,7 +1194,7 @@ def render():
         draw_brief(d, M, ry2 + j * 30, n, p, t, s, src_size)
     for j, (n, (p, t, s)) in enumerate(b3):
         draw_brief(d, M + 880 + 30, ry2 + j * 30, n, p, t, s, src_size)
-    DIV5 = 1978
+    DIV5 = ry2 + 186
     divider(DIV5)
 
     # date check: title at the left, the exclusions set beside it
@@ -1132,16 +1213,16 @@ def render():
     text_block(d, M + 470, y0, dlines, df2, dlead, fill=MID)
 
     # folio line
-    d.line([M, 2026, right, 2026], fill=HAIR, width=2)
+    d.line([M, DIV5 + 52, right, DIV5 + 52], fill=HAIR, width=2)
     folio = "22.11.26 — 37 STORIES"
     ff = fit_tracked(d, "folio left", folio, dsans_b, 13, 12, 2, 400)
-    draw_tracked(d, M, 2030, folio, ff, 2, MID)
+    draw_tracked(d, M, DIV5 + 56, folio, ff, 2, MID)
     foot = ("Every story here happened, or was first reported, on Sunday "
             "22 November 2026. Officials' counts and claims are attributed. "
             "Original drawings.")
     ff2 = fit_oneline(d, "folio right", foot, lsans, 13, 12, CW - 430)
     tw = d.textlength(foot, font=ff2)
-    d.text((right - tw, 2030), foot, font=ff2, fill=MID)
+    d.text((right - tw, DIV5 + 56), foot, font=ff2, fill=MID)
 
     report_checks()
 
