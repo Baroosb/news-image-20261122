@@ -2,16 +2,28 @@
 """
 build.py — renders the entry image for make.fun news-image-20261122.
 
-A one-page broadsheet, "THE WORLD ON SUNDAY", summing up the world news of
-Sunday 22 November 2026: 3 leads, 10 cards and a 24-item also-list — 37
-stories, every one fact-audited against dated original reporting (see
+A one-page broadsheet, "THE WORLD IN ONE DAY", summing up the world news
+of Sunday 22 November 2026: 3 leads, 10 cards and a 24-item also-list —
+37 stories, every one fact-audited against dated original reporting (see
 STORIES.md for the frozen story set and AUDIT.md for the audit trail).
 
-The page is drawn programmatically with Pillow at 2048x2048
-(entry-master.png) and downscaled to the 1024x1024 entry.png that main.py
-ships. All illustrations are original flat drawings made in this file.
+Version 3 is a premium redesign to a design panel's specification —
+Mark Porter's Guardian print redesign crossed with Swiss grid
+discipline, Monocle restraint: type does the work, decoration is
+removed. A strict six-colour palette (paper, ink, mid ink, hairline,
+oxblood, slate), one hairline weight used only as full-width section
+dividers, duotone spot art for the three leads, margin numerals, drop
+caps, square tier markers, an oversized ghost "22" in the masthead and
+a dotted map with oxblood pins. No boxes, no pills, no shadows.
 
-Run:  python3 build.py        (needs Pillow and the Noto fonts)
+The page is drawn programmatically with Pillow at 2048x2048
+(entry-master.png) and downscaled to the 1024x1024 entry.png that
+main.py ships. Every text block is measured and fitted into its zone;
+the build registers a fit check per block and fails loudly if any
+block overflows.
+
+Run:  python3 build.py        (needs Pillow and the DejaVu /
+                              Liberation fonts)
 """
 
 import math
@@ -23,74 +35,45 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 W = H = 2048
 
 # ---------------------------------------------------------------- fonts
-FONT_DIR = "/usr/share/fonts/truetype/noto"
 DEJA_DIR = "/usr/share/fonts/truetype/dejavu"
-
-
-def font(name, size, fallback="DejaVuSans.ttf"):
-    path = os.path.join(FONT_DIR, name)
-    if not os.path.exists(path):
-        path = os.path.join(DEJA_DIR, fallback)
-    return ImageFont.truetype(path, size)
-
-
-def serif(size):
-    return font("NotoSerif-Regular.ttf", size, "DejaVuSerif.ttf")
+LIB_DIR = "/usr/share/fonts/truetype/liberation"
 
 
 def serif_b(size):
-    return font("NotoSerif-Bold.ttf", size, "DejaVuSerif-Bold.ttf")
+    return ImageFont.truetype(os.path.join(DEJA_DIR, "DejaVuSerif-Bold.ttf"),
+                              size)
 
 
-def serif_i(size):
-    return font("NotoSerif-Italic.ttf", size, "DejaVuSerif.ttf")
+def serif(size):
+    return ImageFont.truetype(os.path.join(DEJA_DIR, "DejaVuSerif.ttf"), size)
 
 
-def sans(size):
-    return font("NotoSans-Regular.ttf", size, "DejaVuSans.ttf")
+def dsans_b(size):
+    return ImageFont.truetype(os.path.join(DEJA_DIR, "DejaVuSans-Bold.ttf"),
+                              size)
 
 
-def sans_b(size):
-    return font("NotoSans-Bold.ttf", size, "DejaVuSans-Bold.ttf")
+def lsans(size):
+    return ImageFont.truetype(os.path.join(LIB_DIR, "LiberationSans-Regular.ttf"),
+                              size)
 
 
-def sans_sb(size):
-    return font("NotoSans-SemiBold.ttf", size, "DejaVuSans-Bold.ttf")
+def lsans_b(size):
+    return ImageFont.truetype(os.path.join(LIB_DIR, "LiberationSans-Bold.ttf"),
+                              size)
 
 
-def sans_c(size):
-    return font("NotoSans-Condensed.ttf", size, "DejaVuSans.ttf")
-
-
-def sans_cb(size):
-    return font("NotoSans-CondensedBold.ttf", size, "DejaVuSans-Bold.ttf")
-
-
-# ---------------------------------------------------------------- colours
-INK = (28, 25, 22)
-PAPER = (248, 244, 234)
-PANEL = (252, 250, 244)
-RULE = (120, 110, 96)
-RED = (176, 32, 48)
-DARKRED = (140, 30, 34)
-NAVY = (22, 34, 66)
-GOLD = (198, 148, 42)
-
-REGION_COLORS = {
-    "Europe": (38, 84, 150),
-    "Asia": (198, 96, 30),
-    "Middle East": (106, 62, 143),
-    "Africa": (172, 128, 30),
-    "Americas": (28, 118, 106),
-    "Oceania": (178, 52, 110),
-    "Global": (96, 96, 96),
-}
-
-TIER_COLORS = {
-    "CONFIRMED": (30, 122, 62),
-    "OFFICIAL": (38, 84, 150),
-    "REPORTED": (196, 120, 20),
-}
+# ---------------------------------------------------------------- palette
+PAPER = (242, 238, 229)          # #F2EEE5
+INK = (23, 18, 15)               # #17120F
+MID = (87, 80, 74)               # #57504A
+HAIR = (213, 206, 193)           # #D5CEC1
+OXB = (138, 28, 19)              # #8A1C13
+SLATE = (51, 72, 79)             # #33484F
+INK_TINT = (112, 103, 94)        # ink family, for the tally bar
+SLATE_TINT = (104, 122, 128)     # slate family, for the tally bar
+MID_TINT = (152, 144, 134)       # mid family, for the tally bar
+GHOST = (232, 217, 208)          # oxblood at ~10% over paper
 
 # ---------------------------------------------------------------- content
 STATS = [
@@ -121,7 +104,7 @@ LEADS = [
         "tier": "CONFIRMED", "art": "cop",
     },
     {
-        "num": 2, "band": "IRAN STRIKES BAHRAIN", "band_color": NAVY,
+        "num": 2, "band": "IRAN STRIKES BAHRAIN", "band_color": (22, 34, 66),
         "kicker": "MANAMA · MISSILES & DRONES",
         "headline": "Iran strikes US bases in Bahrain",
         "body": ("The Revolutionary Guard said its missiles and drones hit "
@@ -255,21 +238,28 @@ def wrap(draw, text, fnt, max_w):
     return lines
 
 
-def fit(draw, text, make_font, start, min_size, max_w, max_lines, leading=1.12):
-    """Largest font (from start down to min_size) whose wrap fits max_lines."""
-    size = start
-    while size > min_size:
-        fnt = make_font(size)
-        lines = wrap(draw, text, fnt, max_w)
-        if len(lines) <= max_lines:
-            return fnt, lines, size * leading
-        size -= 2
-    fnt = make_font(min_size)
-    return fnt, wrap(draw, text, fnt, max_w)[:max_lines], min_size * leading
+def wrap_var(draw, text, fnt, widths):
+    """Greedy wrap where line i may use widths[min(i, len(widths)-1)]."""
+    words, lines, cur = text.split(), [], ""
+
+    def limit():
+        return widths[min(len(lines), len(widths) - 1)]
+
+    for w_ in words:
+        trial = (cur + " " + w_).strip()
+        if draw.textlength(trial, font=fnt) <= limit() or not cur:
+            cur = trial
+        else:
+            lines.append(cur)
+            cur = w_
+    if cur:
+        lines.append(cur)
+    return lines
 
 
 # ------------------------------------------------------------ fit checks
 CHECKS = []
+ELLIPSIZED = []
 
 
 def _register(label, needed, box):
@@ -290,7 +280,8 @@ def fit_box(draw, label, text, make_font, start, min_size, max_w, box_h,
 
     Height of n lines is (n-1)*leading*size + size. Registers a fit check;
     if even min_size overflows, the tail is ellipsized so the block still
-    fits, and the check records what was actually drawn.
+    fits, the check records what was actually drawn, and the label is
+    noted in ELLIPSIZED for the report.
     """
     size = start
     while size >= min_size:
@@ -307,6 +298,7 @@ def fit_box(draw, label, text, make_font, start, min_size, max_w, box_h,
     if len(lines) > max_lines:
         tail = " ".join(lines[max_lines - 1:])
         lines = lines[:max_lines - 1] + [ellipsize(draw, tail, fnt, max_w)]
+        ELLIPSIZED.append(label)
     height = (len(lines) - 1) * min_size * leading + min_size if lines else 0
     _register(label, height, box_h)
     return fnt, lines, min_size * leading
@@ -327,11 +319,44 @@ def fit_oneline(draw, label, text, make_font, start, min_size, max_w):
     return fnt
 
 
+def tracked_width(draw, text, fnt, tracking):
+    if not text:
+        return 0
+    return (sum(draw.textlength(ch, font=fnt) for ch in text)
+            + tracking * (len(text) - 1))
+
+
+def draw_tracked(draw, x, y, text, fnt, tracking, fill):
+    cx = x
+    for ch in text:
+        draw.text((cx, y), ch, font=fnt, fill=fill)
+        cx += draw.textlength(ch, font=fnt) + tracking
+    return cx - tracking
+
+
+def fit_tracked(draw, label, text, make_font, start, min_size, tracking,
+                max_w):
+    """Largest font whose letter-spaced (tracked) line fits max_w."""
+    size = start
+    while size > min_size:
+        fnt = make_font(size)
+        w_ = tracked_width(draw, text, fnt, tracking)
+        if w_ <= max_w:
+            _register(label, w_, max_w)
+            return fnt
+        size -= 1
+    fnt = make_font(min_size)
+    _register(label, tracked_width(draw, text, fnt, tracking), max_w)
+    return fnt
+
+
 def report_checks():
     bad = [(l, n, b) for (l, n, b) in CHECKS if n > b + 0.5]
     for l, n, b in CHECKS:
         print(f"  fit {'ok  ' if n <= b + 0.5 else 'FAIL'} {l}: "
               f"{n:.0f} <= {b:.0f}")
+    if ELLIPSIZED:
+        print("  ellipsized blocks:", ", ".join(ELLIPSIZED))
     if bad:
         raise SystemExit(f"FIT CHECK FAILED: {len(bad)} block(s) do not fit")
     print(f"fit check: all {len(CHECKS)} blocks fit")
@@ -344,234 +369,125 @@ def text_block(draw, x, y, lines, fnt, leading, fill=INK):
     return y
 
 
-def pill_width(draw, tier, size=21):
-    return draw.textlength(tier, font=sans_b(size)) + 26
+def tier_marker(draw, x_right, y, tier, size=15, tracking=2, sq=8):
+    """A small ink square plus the tier word in tracked small caps,
+    right-aligned to x_right. No pills, no rounded rectangles."""
+    fnt = dsans_b(size)
+    tw = tracked_width(draw, tier, fnt, tracking)
+    total = sq + 8 + tw
+    draw.rectangle([x_right - total, y + (size - sq) / 2 + 1,
+                    x_right - total + sq, y + (size - sq) / 2 + 1 + sq],
+                   fill=INK)
+    draw_tracked(draw, x_right - tw, y, tier, fnt, tracking, INK)
+    return total
 
 
-def tier_pill(draw, x_right, y, tier, size=21, height=34):
-    fnt = sans_b(size)
-    label = tier
-    w_ = draw.textlength(label, font=fnt) + 26
-    color = TIER_COLORS[tier]
-    draw.rounded_rectangle([x_right - w_, y, x_right, y + height], 8,
-                           fill=color)
-    draw.text((x_right - w_ + 13, y + (height - size) / 2 - 2), label,
-              font=fnt, fill=(255, 255, 255))
-    return w_
-
-
-def badge(draw, cx, cy, r, num, fill=RED):
-    draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill)
-    fnt = sans_b(int(r * 1.05))
-    label = str(num)
-    tw = draw.textlength(label, font=fnt)
-    draw.text((cx - tw / 2, cy - r * 0.58), label, font=fnt, fill=(255, 255, 255))
-
-
-# ---------------------------------------------------------------- flat art
+# ------------------------------------------------------- duotone spot art
+# Each lead illustration is flat shapes in ink + oxblood only, drawn in a
+# wide strip inside a single 1px (2px at master scale) ink frame.
 def art_cop(d, x, y, w_, h):
-    """Sun, thermometer and a rising line: a summit that ran too hot."""
-    d.rectangle([x, y, x + w_, y + h], fill=(250, 232, 205))
-    # sun
-    cx, cy, r = x + w_ * 0.30, y + h * 0.52, h * 0.30
-    for a in range(0, 360, 30):
+    """Concentric sun disc and a bold thermometer silhouette."""
+    cy = y + h / 2
+    # concentric sun: oxblood core, ink ring, oxblood ring, ink rays
+    cx, r = x + h * 0.62, h * 0.34
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=INK, width=4)
+    r2 = r * 0.68
+    d.ellipse([cx - r2, cy - r2, cx + r2, cy + r2], outline=OXB, width=4)
+    r3 = r * 0.38
+    d.ellipse([cx - r3, cy - r3, cx + r3, cy + r3], fill=OXB)
+    for a in range(0, 360, 45):
         rad = math.radians(a)
-        d.line([cx + math.cos(rad) * r * 1.25, cy + math.sin(rad) * r * 1.25,
-                cx + math.cos(rad) * r * 1.6, cy + math.sin(rad) * r * 1.6],
-               fill=GOLD, width=7)
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(240, 178, 60))
-    d.ellipse([cx - r * 0.55, cy - r * 0.55, cx + r * 0.55, cy + r * 0.55],
-              fill=(246, 200, 96))
-    # thermometer
-    tx = x + w_ * 0.68
-    d.rounded_rectangle([tx, y + h * 0.14, tx + 26, y + h * 0.78], 13,
-                        outline=INK, width=5)
-    d.rounded_rectangle([tx + 5, y + h * 0.30, tx + 21, y + h * 0.74], 8,
-                        fill=RED)
-    d.ellipse([tx - 12, y + h * 0.66, tx + 38, y + h * 0.94], fill=RED)
-    for i in range(4):
-        yy = y + h * (0.22 + i * 0.14)
-        d.line([tx + 34, yy, tx + 56, yy], fill=INK, width=4)
-    # crossed-out text lines (the missing words) + verdict, kept clear of
-    # the thermometer (which starts at 0.68 of the width)
-    ly = y + h * 0.88
-    d.line([x + w_ * 0.08, ly, x + w_ * 0.44, ly], fill=INK, width=6)
-    d.line([x + w_ * 0.08, ly - 8, x + w_ * 0.44, ly + 8], fill=RED, width=6)
-    nf = sans_b(25)
-    _register("cop art NO DEAL",
-              w_ * 0.47 + d.textlength("NO DEAL", font=nf), w_ * 0.66)
-    d.text((x + w_ * 0.47, ly - 14), "NO DEAL", font=nf, fill=DARKRED)
+        d.line([cx + math.cos(rad) * r * 1.18, cy + math.sin(rad) * r * 1.18,
+                cx + math.cos(rad) * r * 1.48, cy + math.sin(rad) * r * 1.48],
+               fill=INK, width=4)
+    # thermometer silhouette, right of centre
+    tx = x + w_ * 0.60
+    tube_w = h * 0.16
+    d.rectangle([tx, y + h * 0.14, tx + tube_w, y + h * 0.72], fill=INK)
+    bulb_r = h * 0.17
+    bcx, bcy = tx + tube_w / 2, y + h * 0.80
+    d.ellipse([bcx - bulb_r, bcy - bulb_r, bcx + bulb_r, bcy + bulb_r],
+              fill=INK)
+    mcy = y + h * 0.80
+    d.rectangle([tx + tube_w * 0.28, y + h * 0.30, tx + tube_w * 0.72, mcy],
+                fill=OXB)
+    br = bulb_r * 0.55
+    d.ellipse([bcx - br, bcy - br, bcx + br, bcy + br], fill=OXB)
+    for i in range(3):
+        yy = y + h * (0.24 + i * 0.18)
+        d.line([tx + tube_w + 8, yy, tx + tube_w + 26, yy], fill=INK, width=3)
+    # a rising oxblood line running away to the right edge
+    pts = [(x + w_ * 0.76, y + h * 0.74), (x + w_ * 0.84, y + h * 0.58),
+           (x + w_ * 0.91, y + h * 0.62), (x + w_ * 0.985, y + h * 0.30)]
+    d.line(pts, fill=OXB, width=5)
+    ex, ey = pts[-1]
+    d.polygon([(ex, ey), (ex - 16, ey + 3), (ex - 5, ey + 15)], fill=OXB)
+    # baseline
+    d.line([x + 10, y + h - 7, x + w_ - 10, y + h - 7], fill=INK, width=3)
 
 
 def art_missiles(d, x, y, w_, h):
-    """Night sky, arcs and bursts over a shoreline base."""
-    d.rectangle([x, y, x + w_, y + h], fill=(16, 24, 52))
-    for sx, sy in [(0.08, 0.2), (0.2, 0.45), (0.36, 0.15), (0.55, 0.3),
-                   (0.78, 0.18), (0.9, 0.42), (0.66, 0.55), (0.14, 0.62)]:
-        d.ellipse([x + w_ * sx, y + h * sy, x + w_ * sx + 6, y + h * sy + 6],
-                  fill=(230, 230, 210))
-    # crescent
-    cx, cy, r = x + w_ * 0.86, y + h * 0.26, 30
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(238, 226, 170))
-    d.ellipse([cx - r * 0.4, cy - r * 1.05, cx + r * 1.1, cy + r * 0.6],
-              fill=(16, 24, 52))
-    # missile arcs
-    for (x0, x1, peak, col) in [(0.06, 0.52, 0.52, (255, 170, 80)),
-                                (0.16, 0.66, 0.66, (255, 120, 90)),
-                                (0.02, 0.40, 0.36, (255, 200, 120))]:
+    """A night band: ink field, three oxblood missile arcs, paper stars."""
+    d.rectangle([x, y, x + w_, y + h], fill=INK)
+    for sx, sy in [(0.06, 0.22), (0.16, 0.5), (0.30, 0.16), (0.46, 0.34),
+                   (0.60, 0.14), (0.72, 0.44), (0.86, 0.2), (0.95, 0.52),
+                   (0.38, 0.58), (0.55, 0.55)]:
+        px, py = x + w_ * sx, y + h * sy
+        d.ellipse([px - 2.5, py - 2.5, px + 2.5, py + 2.5], fill=PAPER)
+    # three descending arcs ending in small bursts
+    for (x0, x1, peak) in [(0.04, 0.46, 0.60), (0.14, 0.62, 0.78),
+                            (0.02, 0.34, 0.42)]:
         pts = []
-        for t in range(21):
-            tt = t / 20
+        for t in range(25):
+            tt = t / 24
             px = x + w_ * (x0 + (x1 - x0) * tt)
-            py = y + h * (0.92 - peak * 4 * tt * (1 - tt) - 0.55 * tt)
+            py = y + h * (0.30 + peak * tt - 0.55 * tt * tt)
             pts.append((px, py))
-        d.line(pts, fill=col, width=5)
+        d.line(pts, fill=OXB, width=5)
         ex, ey = pts[-1]
         for a in range(0, 360, 45):
             rad = math.radians(a)
-            d.line([ex, ey, ex + math.cos(rad) * 20, ey + math.sin(rad) * 20],
-                   fill=(255, 210, 110), width=5)
-    # ground + radar dome
-    d.rectangle([x, y + h * 0.90, x + w_, y + h], fill=(8, 12, 28))
-    bx = x + w_ * 0.60
-    d.rectangle([bx, y + h * 0.80, bx + 90, y + h * 0.92], fill=(40, 52, 88))
-    d.pieslice([bx + 8, y + h * 0.66, bx + 82, y + h * 0.92], 180, 360,
-               fill=(200, 208, 224))
-    d.text((x + 14, y + h * 0.90 - 34), "OVERNIGHT · 2 BASES HIT",
-           font=sans_b(24), fill=(255, 214, 130))
+            d.line([ex, ey, ex + math.cos(rad) * 13, ey + math.sin(rad) * 13],
+                   fill=OXB, width=4)
+    # horizon: a paper line, with oxblood base blocks standing on it
+    hy = y + h * 0.88
+    d.line([x, hy, x + w_, hy], fill=PAPER, width=3)
+    for bx, bw, bh in [(0.58, 0.10, 0.16), (0.70, 0.07, 0.24),
+                       (0.79, 0.12, 0.13), (0.93, 0.05, 0.20)]:
+        d.rectangle([x + w_ * bx, hy - h * bh, x + w_ * (bx + bw), hy],
+                    fill=OXB)
+    # one pale dome among the blocks
+    dx = x + w_ * 0.845
+    d.pieslice([dx, hy - h * 0.20, dx + w_ * 0.055, hy + h * 0.06], 180, 360,
+               fill=PAPER)
 
 
 def art_drones(d, x, y, w_, h):
-    """Skyline, quadcopter silhouettes and a UN-blue flag."""
-    d.rectangle([x, y, x + w_, y + h], fill=(238, 226, 205))
-    # skyline
-    base = y + h
+    """Skyline blocks in ink along the bottom, drone X shapes in oxblood."""
+    base = y + h - 6
+    heights = [0.34, 0.58, 0.42, 0.72, 0.5, 0.64, 0.38, 0.56, 0.46, 0.68,
+               0.4, 0.52]
     bx = x + 8
-    heights = [0.42, 0.62, 0.5, 0.74, 0.56, 0.66, 0.46, 0.6]
     i = 0
-    while bx < x + w_ - 40:
-        bw = w_ * 0.105
+    while bx < x + w_ - 30:
+        bw = w_ * 0.068
         bh = h * heights[i % len(heights)]
-        d.rectangle([bx, base - bh, bx + bw, base], fill=(70, 58, 44))
-        bx += bw + 6
+        d.rectangle([bx, base - bh, bx + bw, base], fill=INK)
+        bx += bw + 7
         i += 1
-    # UN building + flag
-    ux, uw = x + w_ * 0.60, w_ * 0.17
-    d.rectangle([ux, base - h * 0.78, ux + uw, base], fill=(96, 84, 66))
-    d.rectangle([ux + uw * 0.28, base - h * 0.97, ux + uw * 0.34, base - h * 0.78],
-                fill=INK)
-    d.rectangle([ux + uw * 0.34, base - h * 0.97, ux + uw * 0.34 + 74,
-                 base - h * 0.97 + 44], fill=(70, 140, 200))
-    d.text((ux + uw * 0.34 + 14, base - h * 0.97 + 7), "UN", font=sans_b(30),
-           fill=(255, 255, 255))
-    # drones
-    for (dx, dy, s) in [(0.16, 0.20, 1.0), (0.38, 0.12, 0.75), (0.55, 0.30, 0.6)]:
+    d.line([x + 4, base + 3, x + w_ - 4, base + 3], fill=INK, width=3)
+    # drones: an X of two crossed lines with a small centre ring
+    for (dx, dy, s) in [(0.16, 0.30, 1.0), (0.40, 0.18, 0.72),
+                        (0.63, 0.36, 0.85), (0.86, 0.16, 0.6)]:
         cx, cy = x + w_ * dx, y + h * dy
-        r = 26 * s
-        d.ellipse([cx - r * 0.32, cy - r * 0.22, cx + r * 0.32, cy + r * 0.22],
-                  fill=INK)
+        r = h * 0.17 * s
         for sx, sy in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
-            ex, ey = cx + sx * r, cy + sy * r * 0.62
-            d.line([cx, cy, ex, ey], fill=INK, width=5)
-            d.ellipse([ex - 11 * s, ey - 5 * s, ex + 11 * s, ey + 5 * s],
-                      outline=INK, width=4)
-    # burst
-    ex, ey = x + w_ * 0.30, y + h * 0.52
-    for a in range(0, 360, 36):
-        rad = math.radians(a)
-        d.line([ex, ey, ex + math.cos(rad) * 30, ey + math.sin(rad) * 30],
-               fill=RED, width=6)
-
-
-def art_icon(d, kind, x, y, s):
-    """Small flat icons for the cards; box is (x, y, s, s*0.62)."""
-    w_, h = s, s * 0.62
-    if kind == "flame":
-        cx, by = x + w_ / 2, y + h
-        d.polygon([(cx, y + 2), (cx + w_ * 0.30, by - h * 0.35),
-                   (cx + w_ * 0.16, by), (cx - w_ * 0.16, by),
-                   (cx - w_ * 0.30, by - h * 0.35)], fill=(224, 110, 30))
-        d.polygon([(cx, y + h * 0.34), (cx + w_ * 0.15, by - h * 0.2),
-                   (cx + w_ * 0.08, by), (cx - w_ * 0.08, by),
-                   (cx - w_ * 0.15, by - h * 0.2)], fill=(246, 186, 60))
-    elif kind == "paper":
-        d.rectangle([x + 6, y + 2, x + w_ * 0.62, y + h - 2], outline=INK,
-                    width=4)
-        for i in range(3):
-            ly = y + 12 + i * (h - 22) / 3
-            d.line([x + 14, ly, x + w_ * 0.52, ly], fill=INK, width=3)
-        d.line([x + w_ * 0.55, y + h - 8, x + w_ - 4, y + 8], fill=RED, width=6)
-        d.polygon([(x + w_ - 4, y + 8), (x + w_ - 16, y + 10),
-                   (x + w_ - 6, y + 20)], fill=INK)
-    elif kind == "chart":
-        d.line([x + 4, y + h - 6, x + w_ - 4, y + h - 6], fill=INK, width=4)
-        pts = [(x + 8, y + 8), (x + w_ * 0.38, y + h * 0.42),
-               (x + w_ * 0.62, y + h * 0.30), (x + w_ - 10, y + h * 0.62)]
-        d.line(pts, fill=(30, 122, 62), width=6)
-        ex, ey = pts[-1]
-        d.polygon([(ex, ey), (ex - 16, ey - 2), (ex - 4, ey + 14)],
-                  fill=(30, 122, 62))
-        nf = sans_b(23)
-        _register("chart icon 80%", w_ * 0.34 + d.textlength("80%", font=nf),
-                  w_)
-        d.text((x + w_ * 0.34, y + 1), "80%", font=nf, fill=(30, 122, 62))
-    elif kind == "cricket":
-        d.line([x + w_ * 0.30, y + h - 4, x + w_ * 0.52, y + 6],
-               fill=(176, 128, 52), width=11)
-        d.ellipse([x + w_ * 0.62, y + h * 0.42, x + w_ * 0.62 + h * 0.42,
-                   y + h * 0.84], fill=RED)
-        d.arc([x + w_ * 0.62, y + h * 0.42, x + w_ * 0.62 + h * 0.42,
-               y + h * 0.84], 100, 260, fill=(255, 255, 255), width=3)
-    elif kind == "car":
-        by = y + h - 6
-        d.polygon([(x + 4, by - 12), (x + w_ * 0.18, by - 12),
-                   (x + w_ * 0.30, by - h * 0.52), (x + w_ * 0.62, by - h * 0.52),
-                   (x + w_ * 0.78, by - 12), (x + w_ - 4, by - 12)],
-                  fill=(28, 60, 130))
-        d.rectangle([x + w_ * 0.80, by - h * 0.30, x + w_ - 2, by - h * 0.16],
-                    fill=INK)
-        for wx in (0.24, 0.72):
-            cx = x + w_ * wx
-            d.ellipse([cx - 13, by - 24, cx + 13, by + 2], fill=INK)
-            d.ellipse([cx - 5, by - 16, cx + 5, by - 6], fill=(200, 200, 200))
-    elif kind == "coin":
-        cx, cy, r = x + w_ / 2, y + h / 2, h * 0.48
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(240, 178, 60),
-                  outline=(176, 128, 30), width=4)
-        d.text((cx - 13, cy - 24), "B", font=sans_b(44), fill=(120, 78, 10))
-        d.line([cx - 4, cy - r + 6, cx - 4, cy + r - 6], fill=(120, 78, 10),
-               width=4)
-        d.line([cx + 7, cy - r + 6, cx + 7, cy + r - 6], fill=(120, 78, 10),
-               width=4)
-    elif kind == "dome":
-        cx = x + w_ / 2
-        d.pieslice([cx - w_ * 0.26, y + 2, cx + w_ * 0.26, y + h * 0.78],
-                   180, 360, fill=(90, 96, 110))
-        d.rectangle([x + 6, y + h * 0.52, x + w_ - 6, y + h * 0.62], fill=INK)
-        for i in range(5):
-            px = x + 12 + i * (w_ - 24) / 4
-            d.rectangle([px, y + h * 0.62, px + 5, y + h - 4], fill=INK)
-    elif kind == "shield":
-        cx, top = x + w_ / 2, y + 2
-        d.polygon([(cx - w_ * 0.26, top), (cx + w_ * 0.26, top),
-                   (cx + w_ * 0.26, y + h * 0.45), (cx, y + h - 2),
-                   (cx - w_ * 0.26, y + h * 0.45)], outline=(38, 84, 150),
-                  width=6)
-        nf = sans_b(21)
-        tw = d.textlength("FBI", font=nf)
-        _register("shield icon FBI", tw, w_ * 0.44)
-        d.text((cx - tw / 2, y + h * 0.15), "FBI", font=nf,
-               fill=(38, 84, 150))
-    elif kind == "quote":
-        d.text((x + 4, y - 4), "\u201c", font=serif_b(62), fill=RED)
-        d.text((x + w_ * 0.52, y - 4), "\u201d", font=serif_b(62), fill=RED)
-    elif kind == "hands":
-        cy = y + h * 0.52
-        d.arc([x + 2, cy - 20, x + w_ * 0.55, cy + 22], 300, 130,
-              fill=(28, 118, 106), width=8)
-        d.arc([x + w_ * 0.45, cy - 22, x + w_ - 2, cy + 20], 130, 300,
-              fill=(172, 128, 30), width=8)
-        d.ellipse([x + w_ / 2 - 8, cy - 8, x + w_ / 2 + 8, cy + 8], fill=INK)
+            ex, ey = cx + sx * r, cy + sy * r * 0.72
+            d.line([cx, cy, ex, ey], fill=OXB, width=5)
+            d.ellipse([ex - 6 * s, ey - 6 * s, ex + 6 * s, ey + 6 * s],
+                      outline=OXB, width=4)
+        cr = r * 0.30
+        d.ellipse([cx - cr, cy - cr, cx + cr, cy + cr], outline=OXB, width=4)
 
 
 ART = {"cop": art_cop, "missiles": art_missiles, "drones": art_drones}
@@ -598,234 +514,295 @@ def is_land(lon, lat):
 
 
 def draw_map(d, x, y, w_, h):
-    d.rectangle([x, y, x + w_, y + h], fill=(18, 30, 54))
-    cols, rows = 74, 34
+    """Dotted world map: mid-ink dots on the paper, oxblood pins with
+    paper numerals. Latitude range 76..-48 keeps the dots near-square."""
+    cols, rows = 88, 30
     sx, sy = w_ / cols, h / rows
     for r_ in range(rows):
-        lat = 76 - (r_ + 0.5) * (138 / rows)
+        lat = 76 - (r_ + 0.5) * (124 / rows)
         for c_ in range(cols):
             lon = -172 + (c_ + 0.5) * (356 / cols)
             if is_land(lon, lat):
                 cx, cy = x + (c_ + 0.5) * sx, y + (r_ + 0.5) * sy
-                d.ellipse([cx - 3.4, cy - 3.4, cx + 3.4, cy + 3.4],
-                          fill=(214, 178, 92))
+                d.ellipse([cx - 3.1, cy - 3.1, cx + 3.1, cy + 3.1], fill=MID)
+    pf = dsans_b(13)
     for num, (lon, lat) in PINS.items():
         px = x + (lon + 172) / 356 * w_
-        py = y + (76 - lat) / 138 * h
-        badge(d, px, py, 13.5, num)
-    cap = "Each number is the story with that number on this page."
-    cf = fit_oneline(d, "map caption", cap, sans, 21, 14, w_ - 28)
-    d.text((x + 14, y + h - 32), cap, font=cf, fill=(190, 200, 220))
+        py = y + (76 - lat) / 124 * h
+        r = 11.5
+        d.ellipse([px - r, py - r, px + r, py + r], fill=OXB)
+        d.text((px, py), str(num), font=pf, fill=PAPER, anchor="mm")
 
 
-def draw_also_line(d, x, y, num, place, txt, src, col_w):
-    """One also-list story on ONE line: number + place in bold, the rest
-    condensed, the source grey — shrunk until the whole line fits col_w."""
-    tail = f" ({src})"
-    body = f" \u2014 {txt}"
-    size = 20
-    while size > 15:
-        fb, fc = sans_cb(size), sans_c(size)
-        total = (d.textlength(str(num), font=fb) + 8
-                 + d.textlength(place, font=fb)
-                 + d.textlength(body, font=fc)
-                 + d.textlength(tail, font=fc))
-        if total <= col_w - 2:
+def brief_width(d, num, place, txt, src, src_size):
+    fb, fr = lsans_b(22), lsans(22)
+    fn = serif_b(20)
+    fs = lsans(src_size)
+    return (d.textlength(str(num), font=fn) + 9
+            + d.textlength(place, font=fb)
+            + d.textlength(" \u2014 " + txt, font=fr)
+            + d.textlength(f" ({src})", font=fs))
+
+
+def draw_brief(d, x, y, num, place, txt, src, src_size):
+    fb, fr = lsans_b(22), lsans(22)
+    fn = serif_b(20)
+    fs = lsans(src_size)
+    d.text((x, y), str(num), font=fn, fill=INK)
+    cx = x + d.textlength(str(num), font=fn) + 9
+    d.text((cx, y), place, font=fb, fill=INK)
+    cx += d.textlength(place, font=fb)
+    body = " \u2014 " + txt
+    d.text((cx, y), body, font=fr, fill=INK)
+    cx += d.textlength(body, font=fr)
+    d.text((cx, y), f" ({src})", font=fs, fill=MID)
+
+
+def lead_body(draw, x, y, lead, col_w, zone_h):
+    """Lead body with a drop cap: the first letter enlarged in oxblood
+    serif, the first two lines set narrower to clear it."""
+    body = lead["body"]
+    cap, rest = body[0], body[1:]
+    size, fnt, cap_f, cap_w, lines = 19, None, None, 0, []
+    for size in (22, 21, 20, 19):
+        fnt = lsans(size)
+        cap_f = serif_b(int(size * 2.8))
+        cap_w = draw.textlength(cap, font=cap_f)
+        widths = [col_w - cap_w - 14, col_w - cap_w - 14, col_w]
+        lines = wrap_var(draw, rest, fnt, widths)
+        if len(lines) * size * 1.24 <= zone_h:
             break
-        size -= 1
-    fb, fc = sans_cb(size), sans_c(size)
-    w_num = d.textlength(str(num), font=fb) + 8
-    w_place = d.textlength(place, font=fb)
-    w_body = d.textlength(body, font=fc)
-    w_tail = d.textlength(tail, font=fc)
-    _register(f"also {num}", w_num + w_place + w_body + w_tail, col_w)
-    d.text((x, y), str(num), font=fb, fill=RED)
-    d.text((x + w_num, y), place, font=fb, fill=INK)
-    d.text((x + w_num + w_place, y), body, font=fc, fill=(40, 36, 32))
-    d.text((x + w_num + w_place + w_body, y), tail, font=fc,
-           fill=(96, 88, 78))
+    height = len(lines) * size * 1.24
+    _register(f"lead{lead['num']} body", height, zone_h)
+    draw.text((x, y - size * 0.30), cap, font=cap_f, fill=OXB)
+    ly = y
+    for i, ln in enumerate(lines):
+        lx = x + (cap_w + 14 if i < 2 else 0)
+        draw.text((lx, ly), ln, font=fnt, fill=INK)
+        ly += size * 1.24
+    return size
 
 
 # ---------------------------------------------------------------- layout
 def render():
     img = Image.new("RGB", (W, H), PAPER)
     d = ImageDraw.Draw(img)
-    M = 44
+    M = 96
     right = W - M
     CW = right - M
 
-    # top bar
-    d.rectangle([0, 0, W, 58], fill=INK)
-    d.text((M, 12), "THE WORLD IN ONE DAY", font=sans_b(30),
-           fill=(255, 255, 255))
-    tag = "37 STORIES \u00b7 7 REGIONS \u00b7 EVERY ONE DATED SUNDAY 22 NOVEMBER 2026"
-    tw = d.textlength(tag, font=sans_b(26))
-    d.text((right - tw, 14), tag, font=sans_b(26), fill=(255, 214, 130))
+    def divider(y):
+        d.line([M, y, right, y], fill=HAIR, width=2)
 
-    # masthead
-    title = "Sunday 22 November 2026"
-    fnt = fit_oneline(d, "masthead title", title, serif_b, 148, 60, CW)
-    tw = d.textlength(title, font=fnt)
-    d.text(((W - tw) / 2, 70), title, font=fnt, fill=INK)
-    sub = ("Climate talks end with no deal in Antalya \u00b7 Iran strikes US "
-           "bases in Bahrain \u00b7 Drones hit Khartoum and a UN building")
-    fnt = fit_oneline(d, "masthead sub", sub, serif_i, 37, 22, CW)
-    tw = d.textlength(sub, font=fnt)
-    d.text(((W - tw) / 2, 230), sub, font=fnt, fill=(70, 62, 54))
-    d.line([M, 288, right, 288], fill=INK, width=3)
+    # ghost numeral "22", oxblood at ~10%, cropped by the masthead rule
+    DIV1 = 258
+    ghost_layer = Image.new("RGB", (W, H), PAPER)
+    gd = ImageDraw.Draw(ghost_layer)
+    gf = serif_b(300)
+    gw = gd.textlength("22", font=gf)
+    gd.text((right + 10 - gw, 0), "22", font=gf, fill=GHOST)
+    img.paste(ghost_layer.crop((0, 0, W, DIV1)), (0, 0))
+    d = ImageDraw.Draw(img)
 
-    # stat strip: big number, then a caption confined to its own box
+    # top microtext row
+    lf = fit_tracked(d, "microtext left", "THE WORLD IN ONE DAY", dsans_b,
+                     24, 18, 4, CW * 0.42)
+    draw_tracked(d, M, 30, "THE WORLD IN ONE DAY", lf, 4, INK)
+    tag = ("37 STORIES \u00b7 7 REGIONS \u00b7 EVERY ONE DATED "
+           "SUNDAY 22 NOVEMBER 2026")
+    tf = fit_tracked(d, "microtext right", tag, dsans_b, 23, 17, 2, CW * 0.60)
+    tw = tracked_width(d, tag, tf, 2)
+    draw_tracked(d, right - tw, 31, tag, tf, 2, MID)
+
+    # the date, as large as the measure allows
+    date = "22 November 2026"
+    df = fit_oneline(d, "date display", date, serif_b, 184, 148, CW)
+    d.text((M, 72), date, font=df, fill=INK)
+    divider(DIV1)
+
+    # stat strip: serif figures in oxblood on a shared baseline, captions
+    # confined to their own column
     col_w = CW / 6
+    base_y = DIV1 + 92
     for i, (big, cap) in enumerate(STATS):
         cx = M + i * col_w
-        if i:
-            d.line([cx, 310, cx, 452], fill=RED, width=5)
-        bf = fit_oneline(d, f"stat {big}", big, serif_b, 82, 36, col_w - 24)
-        d.text((cx + 12, 302), big, font=bf, fill=DARKRED)
-        cf, clines, clead = fit_box(d, f"stat caption {big}", cap, sans,
-                                    24, 16, col_w - 24, 70, 1.12)
-        text_block(d, cx + 12, 384, clines, cf, clead, fill=(52, 47, 42))
-    d.line([M, 462, right, 462], fill=INK, width=3)
+        bf = fit_oneline(d, f"stat {big}", big, serif_b, 104, 52, col_w - 20)
+        d.text((cx + 10, base_y), big, font=bf, fill=OXB, anchor="ls")
+        cf, clines, clead = fit_box(d, f"stat caption {big}", cap, lsans,
+                                    19, 16, col_w - 20, 42, 1.18)
+        text_block(d, cx + 10, base_y + 16, clines, cf, clead, fill=MID)
+    DIV2 = 424
+    divider(DIV2)
 
-    # region tally bar: every segment label shrunk to fit its segment
-    y0 = 474
-    total = sum(n for _, n in REGION_TALLY)
-    cx = M
-    for name, n in REGION_TALLY:
-        wseg = CW * n / total
-        color = REGION_COLORS[{"EUROPE": "Europe", "ASIA": "Asia",
-                                "AFRICA": "Africa", "AMERICAS": "Americas",
-                                "MIDDLE EAST": "Middle East",
-                                "GLOBAL": "Global",
-                                "OCEANIA": "Oceania"}[name]]
-        d.rectangle([cx, y0, cx + wseg, y0 + 38], fill=color)
-        label = f"{name} {n}"
-        lf = fit_oneline(d, f"tally {name}", label, sans_b, 22, 12,
-                         wseg - 8)
-        d.text((cx + (wseg - d.textlength(label, font=lf)) / 2, y0 + 7),
-               label, font=lf, fill=(255, 255, 255))
-        cx += wseg
-
-    # leads: fixed zones — band / art / kicker / headline / body / source
-    y0 = 528
-    lead_h = 496
-    gap = 18
-    lead_w = (CW - 2 * gap) / 3
+    # leads: margin numeral + kicker, duotone art in a 1px frame,
+    # serif headline, drop-cap body, source + square tier marker
+    y0 = 440
+    lead_w = 597
+    lead_gap = 32
     for i, lead in enumerate(LEADS):
-        x = M + i * (lead_w + gap)
-        d.rectangle([x, y0, x + lead_w, y0 + lead_h], fill=PANEL,
-                    outline=RULE, width=2)
-        d.rectangle([x, y0, x + lead_w, y0 + 48], fill=lead["band_color"])
-        bf = fit_oneline(d, f"lead{lead['num']} band", lead["band"],
-                         sans_b, 29, 17, lead_w - 36)
-        d.text((x + 18, y0 + 8), lead["band"], font=bf,
-               fill=(255, 255, 255))
-        ART[lead["art"]](d, x + 14, y0 + 54, lead_w - 28, 106)
-        badge(d, x + 31, y0 + 180, 18, lead["num"])
-        kf = fit_oneline(d, f"lead{lead['num']} kicker", lead["kicker"],
-                         sans_b, 25, 16, lead_w - 74)
-        d.text((x + 60, y0 + 166), lead["kicker"], font=kf, fill=RED)
+        x = M + i * (lead_w + lead_gap)
+        num = f"{lead['num']:02d}"
+        nf = serif_b(70)
+        num_w = d.textlength(num, font=nf)
+        _register(f"lead{lead['num']} numeral", num_w, lead_w)
+        d.text((x, y0), num, font=nf, fill=INK)
+        kf = fit_tracked(d, f"lead{lead['num']} kicker", lead["kicker"],
+                         dsans_b, 17, 13, 3, lead_w - num_w - 14)
+        draw_tracked(d, x + num_w + 14, y0 + 25, lead["kicker"], kf, 3, MID)
+        ay = y0 + 78
+        d.rectangle([x, ay, x + lead_w, ay + 80], outline=INK, width=2)
+        ART[lead["art"]](d, x + 3, ay + 3, lead_w - 6, 74)
         hf, hlines, hlead = fit_box(d, f"lead{lead['num']} headline",
-                                    lead["headline"], serif_b, 46, 26,
-                                    lead_w - 36, 96, 1.06)
-        text_block(d, x + 18, y0 + 198, hlines, hf, hlead)
-        bf2, blines, blead = fit_box(d, f"lead{lead['num']} body",
-                                     lead["body"], sans, 24, 17,
-                                     lead_w - 36, 124, 1.15)
-        text_block(d, x + 18, y0 + 302, blines, bf2, blead,
-                   fill=(52, 47, 42))
-        pw = pill_width(d, lead["tier"])
+                                    lead["headline"], serif_b, 48, 34,
+                                    lead_w, 98, 1.02)
+        text_block(d, x, ay + 90, hlines, hf, hlead)
+        lead_body(d, x, ay + 196, lead, lead_w, 124)
+        sy = ay + 330
+        tier_w = tracked_width(d, lead["tier"], dsans_b(15), 2) + 16
         sf = fit_oneline(d, f"lead{lead['num']} source", lead["source"],
-                         sans, 22, 14, lead_w - 36 - pw - 16)
-        d.text((x + 18, y0 + 446), lead["source"], font=sf,
-               fill=(96, 88, 78))
-        tier_pill(d, x + lead_w - 16, y0 + 438, lead["tier"])
+                         lsans, 18, 14, lead_w - tier_w - 16)
+        d.text((x, sy), lead["source"], font=sf, fill=MID)
+        tier_marker(d, x + lead_w, sy + 1, lead["tier"])
+    DIV3 = 880
+    divider(DIV3)
 
-    # cards, two rows of five: fixed zones, icon kept clear of the kicker
-    y0 = 1040
-    card_h = 256
-    cgap = 16
-    card_w = (CW - 4 * cgap) / 5
+    # mid cards, two rows of five: numeral + place, bold sans headline,
+    # brief body, source + tier marker — separated by whitespace only
+    y0 = 894
+    card_w = 345
+    card_gap = 32
+    row_h = 200
     for idx, card in enumerate(CARDS):
         row, col = divmod(idx, 5)
-        x = M + col * (card_w + cgap)
-        y = y0 + row * (card_h + 12)
-        d.rectangle([x, y, x + card_w, y + card_h], fill=PANEL,
-                    outline=RULE, width=2)
-        d.rectangle([x, y, x + card_w, y + 8],
-                    fill=REGION_COLORS[card["region"]])
-        kick = f"{card['num']} \u00b7 {card['place']}"
-        kf = fit_oneline(d, f"card{card['num']} kicker", kick, sans_b,
-                         22, 14, card_w - 120)
-        d.text((x + 14, y + 15), kick, font=kf, fill=RED)
-        art_icon(d, card["art"], x + card_w - 100, y + 11, 88)
+        x = M + col * (card_w + card_gap)
+        y = y0 + row * (row_h + 8)
+        num = f"{card['num']:02d}"
+        nf = serif_b(29)
+        num_w = d.textlength(num, font=nf)
+        d.text((x, y), num, font=nf, fill=INK)
+        kf = fit_tracked(d, f"card{card['num']} kicker", card["place"],
+                         dsans_b, 15, 12, 2.5, card_w - num_w - 9)
+        draw_tracked(d, x + num_w + 9, y + 7, card["place"], kf, 2.5, MID)
         hf, hlines, hlead = fit_box(d, f"card{card['num']} headline",
-                                    card["headline"], serif_b, 33, 21,
-                                    card_w - 28, 72, 1.08)
-        text_block(d, x + 14, y + 70, hlines, hf, hlead)
+                                    card["headline"], lsans_b, 27, 21,
+                                    card_w, 54, 1.04)
+        text_block(d, x, y + 30, hlines, hf, hlead)
         bf, blines, blead = fit_box(d, f"card{card['num']} body",
-                                    card["body"], sans, 20, 15,
-                                    card_w - 28, 68, 1.14)
-        text_block(d, x + 14, y + 148, blines, bf, blead,
-                   fill=(52, 47, 42))
-        pw = pill_width(d, card["tier"], 18)
+                                    card["body"], lsans, 20, 18, card_w, 90,
+                                    1.27)
+        text_block(d, x, y + 90, blines, bf, blead, fill=INK)
+        sy = y + 182
+        tier_w = tracked_width(d, card["tier"], dsans_b(13), 1.5) + 15
         sf = fit_oneline(d, f"card{card['num']} source", card["source"],
-                         sans, 18, 13, card_w - 28 - pw - 14)
-        d.text((x + 14, y + card_h - 28), card["source"], font=sf,
-               fill=(96, 88, 78))
-        tier_pill(d, x + card_w - 12, y + card_h - 34, card["tier"],
-                  size=18, height=30)
+                         lsans, 17, 13, card_w - tier_w - 14)
+        d.text((x, sy), card["source"], font=sf, fill=MID)
+        tier_marker(d, x + card_w, sy + 2, card["tier"], size=13,
+                    tracking=1.5, sq=7)
+    DIV4 = 1316
+    divider(DIV4)
 
-    # bottom: map + also-list (one line per story, shrunk to fit its column)
-    y0 = 1614
-    bot_h = 272
-    hf2 = fit_oneline(d, "map heading", "WHERE IT HAPPENED", sans_b, 26,
-                      17, 700)
-    d.text((M, y0 - 32), "WHERE IT HAPPENED", font=hf2, fill=INK)
-    draw_map(d, M, y0, 700, bot_h)
-    ax = M + 700 + 26
+    # map + briefs band. The briefs are LOCKED at Liberation Sans 22 with
+    # 30px leading (11px / 15px at entry scale): items 14-25 run in one
+    # column beside the map, items 26-37 continue full-width below it.
+    hy = 1330
+    hf1 = fit_tracked(d, "map heading", "WHERE IT HAPPENED", dsans_b, 19,
+                      15, 3, 850)
+    draw_tracked(d, M, hy, "WHERE IT HAPPENED", hf1, 3, INK)
+    ba_x = M + 850 + 32
+    ba_w = right - ba_x
     ah = "ALSO ON SUNDAY \u2014 24 MORE STORIES"
-    af = fit_oneline(d, "also heading", ah, sans_b, 26, 17, right - ax)
-    d.text((ax, y0 - 32), ah, font=af, fill=INK)
-    col_w2 = (right - ax - 18) / 2
-    per_col = 12
-    line_h = bot_h / per_col
-    for j, (place, txt, src) in enumerate(ALSO):
-        col, row = divmod(j, per_col)
-        x = ax + col * (col_w2 + 18)
-        y = y0 + row * line_h + 1
-        draw_also_line(d, x, y, 14 + j, place, txt, src, col_w2)
+    hf2 = fit_tracked(d, "also heading", ah, dsans_b, 19, 15, 3, ba_w)
+    draw_tracked(d, ba_x, hy, ah, hf2, 3, INK)
+    ry = 1358
+    draw_map(d, M, ry, 850, 296)
+    cap = "Each number is the story with that number on this page."
+    cf = fit_oneline(d, "map caption", cap, lsans, 16, 13, 848)
+    d.text((M + 2, ry + 304), cap, font=cf, fill=MID)
 
-    # date check
-    y0 = 1900
-    d.rectangle([M, y0, right, y0 + 84], fill=(238, 230, 214),
-                outline=RULE, width=2)
+    b1 = [(14 + j, ALSO[j]) for j in range(12)]          # beside the map
+    b2 = [(26 + j, ALSO[12 + j]) for j in range(6)]      # below, left
+    b3 = [(32 + j, ALSO[18 + j]) for j in range(6)]      # below, right
+    col_of = {}
+    for n, _ in b1:
+        col_of[n] = ba_w
+    for n, _ in b2:
+        col_of[n] = 880
+    for n, _ in b3:
+        col_of[n] = right - (M + 880 + 30)
+    src_size = 19
+    for cand in (22, 21, 20, 19):
+        if all(brief_width(d, n, p, t, s, cand) <= col_of[n]
+               for n, (p, t, s) in b1 + b2 + b3):
+            src_size = cand
+            break
+    for n, (p, t, s) in b1 + b2 + b3:
+        _register(f"brief {n}", brief_width(d, n, p, t, s, src_size),
+                  col_of[n])
+    for j, (n, (p, t, s)) in enumerate(b1):
+        draw_brief(d, ba_x, ry + j * 30, n, p, t, s, src_size)
+    ry2 = ry + 364
+    for j, (n, (p, t, s)) in enumerate(b2):
+        draw_brief(d, M, ry2 + j * 30, n, p, t, s, src_size)
+    for j, (n, (p, t, s)) in enumerate(b3):
+        draw_brief(d, M + 880 + 30, ry2 + j * 30, n, p, t, s, src_size)
+    DIV5 = 1906
+    divider(DIV5)
+
+    # region tally: one stacked bar, typographic labels under each segment
+    y0 = 1914
+    total = sum(n for _, n in REGION_TALLY)
+    seg_colors = [INK, OXB, SLATE, MID, INK_TINT, SLATE_TINT, MID_TINT]
+    cx = M
+    for k, (name, n) in enumerate(REGION_TALLY):
+        wseg = CW * n / total
+        d.rectangle([cx, y0, cx + wseg, y0 + 26], fill=seg_colors[k])
+        label = f"{name} {n}"
+        lf = fit_tracked(d, f"tally {name}", label, dsans_b, 14, 11, 1.5,
+                         wseg - 4)
+        tw = tracked_width(d, label, lf, 1.5)
+        draw_tracked(d, cx + (wseg - tw) / 2, y0 + 32, label, lf, 1.5, MID)
+        cx += wseg
+
+    # date check: title at the left, the exclusions set beside it
+    y0 = 1972
     dct = "DATE CHECK \u2014 LEFT OUT ON PURPOSE: OLDER NEWS, HOWEVER BIG"
-    tf = fit_oneline(d, "date check title", dct, sans_b, 23, 16, CW - 32)
-    d.text((M + 16, y0 + 9), dct, font=tf, fill=DARKRED)
+    tf, tlines, tlead = fit_box(d, "date check title", dct, dsans_b, 16, 13,
+                                440, 40, 1.2)
+    text_block(d, M, y0, tlines, tf, tlead, fill=OXB)
     dc = ("The Bayelsa boat sinking \u2014 Friday 20 Nov (only Sunday's probe "
           "order is on this page) \u00b7 The Sparta II ship fire \u2014 Saturday "
           "21 Nov \u00b7 The UK\u2013EU \u201clandmark\u201d deal \u2014 Friday 20 Nov "
           "\u00b7 Brazil's election fallout \u2014 18 Nov \u00b7 \u201cCOP31 close "
           "to a deal\u201d \u2014 Saturday's optimism, overtaken by Sunday's collapse")
-    df, dlines, dlead = fit_box(d, "date check body", dc, sans_c, 20, 14,
-                                CW - 32, 40, 1.12)
-    text_block(d, M + 16, y0 + 38, dlines, df, dlead, fill=(52, 47, 42))
+    df, dlines, dlead = fit_box(d, "date check body", dc, lsans, 18, 15,
+                                CW - 470, 44, 1.2)
+    text_block(d, M + 470, y0, dlines, df, dlead, fill=MID)
 
-    # footer
+    # folio line
+    d.line([M, 2022, right, 2022], fill=HAIR, width=2)
+    folio = "22.11.26 \u2014 37 STORIES"
+    ff = fit_tracked(d, "folio left", folio, dsans_b, 14, 12, 2, 400)
+    draw_tracked(d, M, 2028, folio, ff, 2, MID)
     foot = ("Every story here happened, or was first reported, on Sunday "
             "22 November 2026. Officials' counts and claims are attributed. "
             "Original drawings.")
-    ff = fit_oneline(d, "footer line 1", foot, sans, 21, 14, CW)
-    tw = d.textlength(foot, font=ff)
-    d.text(((W - tw) / 2, 1994), foot, font=ff, fill=(70, 62, 54))
-    legend = ("CONFIRMED = independently reported \u00b7 OFFICIAL = the "
-              "authority's own statement \u00b7 REPORTED = an attributed claim")
-    lf2 = fit_oneline(d, "footer line 2", legend, sans, 19, 13, CW)
-    tw = d.textlength(legend, font=lf2)
-    d.text(((W - tw) / 2, 2022), legend, font=lf2, fill=(70, 62, 54))
+    ff2 = fit_oneline(d, "folio right", foot, lsans, 16, 13, CW - 430)
+    tw = d.textlength(foot, font=ff2)
+    d.text((right - tw, 2028), foot, font=ff2, fill=MID)
 
     report_checks()
+
+    # subtle paper grain over the whole page, then the crop marks
+    noise = Image.effect_noise((W, H), 12).convert("RGB")
+    img = Image.blend(img, noise, 0.015)
+    d = ImageDraw.Draw(img)
+    for (cx, cy, dx, dy) in [(30, 30, 1, 1), (W - 30, 30, -1, 1),
+                             (30, H - 30, 1, -1), (W - 30, H - 30, -1, -1)]:
+        d.line([cx, cy, cx + dx * 26, cy], fill=MID, width=2)
+        d.line([cx, cy, cx, cy + dy * 26], fill=MID, width=2)
+    d.ellipse([W / 2 - 7, 23, W / 2 + 7, 37], outline=MID, width=2)
+    d.line([W / 2 - 11, 30, W / 2 + 11, 30], fill=MID, width=2)
+    d.line([W / 2, 19, W / 2, 41], fill=MID, width=2)
 
     master = os.path.join(HERE, "entry-master.png")
     entry = os.path.join(HERE, "entry.png")
