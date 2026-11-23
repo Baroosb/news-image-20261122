@@ -58,6 +58,18 @@ two impact bursts are separated, one centred on each base.
 Story content is unchanged apart from the strap's new words,
 which are themselves frozen card headlines.
 
+Version 8 applies exactly two panel fixes to v7, layout only.
+The scene-first stat blocks on cards 04 and 09 were narrower
+than their own caption words, so MISSING and SUNDAY PRINT
+spilled over the scene bands and clipped; those two blocks are
+widened just enough to hold their captions with padding, and
+all stat text now sits 9px inside the card's right edge. On
+the map, the EUROPE label moves into the empty North Atlantic,
+clear of the pins that covered it, and the eight clustered
+Europe pins are redrawn spread out in a zoom inset over the
+empty South Atlantic, tied to the cluster by a thin connector
+line. Story content is unchanged.
+
 The page is drawn programmatically with Pillow at 2048x2048
 (entry-master.png) and downscaled to the 1024x1024 entry.png that
 main.py ships. Every text block is measured and fitted into its zone;
@@ -1403,12 +1415,97 @@ SEA_BITES = [
 
 MAP_LAND = (226, 206, 164)
 MAP_COAST = (168, 148, 106)
-MAP_LABELS = [("AMERICAS", -110, 48), ("EUROPE", 8, 63),
+MAP_LABELS = [("AMERICAS", -110, 48), ("EUROPE", -28, 59),
               ("ASIA", 100, 52), ("AFRICA", 21, -10),
               ("MIDDLE EAST", 50, 7.5), ("OCEANIA", 134, -27)]
+# v8: EUROPE rides in the empty North Atlantic — at its old seat
+# (8, 63) the relaxed pins sat on the word and clipped it.
 
 
-def draw_map(d, x, y, w_, h):
+# v8: the Europe inset. On the main map the eight clustered pins
+# (14/16/19/20/21/22/23/37) relax into one clump however the leader
+# lines fall; the inset redraws just those pins, spread out over a
+# zoom of their own coastline, in a box over the empty South
+# Atlantic (panel-relative seat verified clear of land and of every
+# relaxed main pin), tied to the cluster by a thin connector line.
+EUROPE_INSET_PINS = (14, 16, 19, 20, 21, 22, 23, 37)
+INSET_BOX = (322, 186, 96, 88)    # panel-relative x, y, w, h —
+                                  # right edge clears the AFRICA
+                                  # label's first letter by 5px
+INSET_LON0 = -6                   # the zoom window's west edge
+INSET_LAT_TOP = 59.5              # … and its north edge
+INSET_SCALE = 96 / 43             # px per degree, both axes
+
+
+def draw_europe_inset(img, d, x, y):
+    ix, iy = x + INSET_BOX[0], y + INSET_BOX[1]
+    iw, ih = INSET_BOX[2], INSET_BOX[3]
+
+    def Q(lon, lat):
+        return ((lon - INSET_LON0) * INSET_SCALE,
+                (INSET_LAT_TOP - lat) * INSET_SCALE)
+
+    sub = Image.new("RGB", (iw, ih), OCEAN)
+    sd = ImageDraw.Draw(sub)
+    for poly in COAST:
+        pts = [Q(lon, lat) for lon, lat in poly]
+        sd.polygon(pts, fill=MAP_LAND)
+        sd.line(pts + [pts[0]], fill=MAP_COAST, width=1)
+    for poly in SEA_BITES:
+        sd.polygon([Q(lon, lat) for lon, lat in poly], fill=OCEAN)
+    # the clustered pins, relaxed apart inside the box exactly as
+    # the main map relaxes its own — smaller radius, tighter cap
+    anchors = {n: Q(*PINS[n]) for n in EUROPE_INSET_PINS}
+    pos = dict(anchors)
+    nums = sorted(EUROPE_INSET_PINS)
+    R = 11
+    for _ in range(90):
+        moved = False
+        for i, a in enumerate(nums):
+            for b_ in nums[i + 1:]:
+                ax_, ay_ = pos[a]
+                bx_, by_ = pos[b_]
+                dx, dy = bx_ - ax_, by_ - ay_
+                dist = math.hypot(dx, dy)
+                if dist < 2 * R + 2:
+                    if dist < 0.01:
+                        dx, dy, dist = 1.0, 0.3, math.hypot(1.0, 0.3)
+                    push = (2 * R + 2 - dist) / 2
+                    ux, uy = dx / dist, dy / dist
+                    pos[a] = (ax_ - ux * push, ay_ - uy * push)
+                    pos[b_] = (bx_ + ux * push, by_ + uy * push)
+                    moved = True
+        for n in nums:
+            ax_, ay_ = anchors[n]
+            px_, py_ = pos[n]
+            dx, dy = px_ - ax_, py_ - ay_
+            dd = math.hypot(dx, dy)
+            if dd > 26:
+                px_, py_ = ax_ + dx / dd * 26, ay_ + dy / dd * 26
+            pos[n] = (min(max(px_, R + 1), iw - R - 1),
+                      min(max(py_, R + 1), ih - R - 1))
+        if not moved:
+            break
+    pf = dsans_b(12)
+    for n in nums:
+        ax_, ay_ = anchors[n]
+        px_, py_ = pos[n]
+        if math.hypot(px_ - ax_, py_ - ay_) > 4:
+            sd.line([ax_, ay_, px_, py_], fill=(96, 86, 72), width=1)
+            sd.ellipse([ax_ - 2, ay_ - 2, ax_ + 2, ay_ + 2],
+                       fill=REGION_COLORS[PIN_REGION[n]], outline=PAPER,
+                       width=1)
+    for n in nums:
+        px_, py_ = pos[n]
+        sd.ellipse([px_ - R, py_ - R, px_ + R, py_ + R],
+                   fill=REGION_COLORS[PIN_REGION[n]], outline=PAPER,
+                   width=2)
+        sd.text((px_, py_), str(n), font=pf, fill=WHITE, anchor="mm")
+    img.paste(sub, (ix, iy))
+    d.rectangle([ix, iy, ix + iw, iy + ih], outline=INK, width=2)
+
+
+def draw_map(d, x, y, w_, h, img):
     """World map: drawn coastline polygons in a deeper land tone on
     the ocean panel, region labels on the landmasses, and the pins
     at their true lon/lat anchors — where pins would overlap, the
@@ -1432,6 +1529,14 @@ def draw_map(d, x, y, w_, h):
         tw = tracked_width(d, name, lf, 2)
         _register(f"map label {name}", tw, w_)
         draw_tracked(d, cx - tw / 2, cy - 8, name, lf, 2, (94, 86, 64))
+    # v8: the Europe inset in the South Atlantic, tied to the
+    # cluster's south-west rim off Brittany by a thin connector in
+    # the leader-line colour; drawn before the pins, so the line
+    # passes quietly under them, and the inset box covers its foot
+    ex, ey = P(-6, 44)
+    d.line([x + INSET_BOX[0] + 42, y + INSET_BOX[1], ex, ey],
+           fill=(96, 86, 72), width=2)
+    draw_europe_inset(img, d, x, y)
     # pins: relax overlapping circles apart (deterministic order),
     # never more than 44px from the anchor, never off the panel
     anchors = {num: P(lon, lat) for num, (lon, lat) in PINS.items()}
@@ -1676,6 +1781,16 @@ def render():
                 # about three-fifths, the scene takes at least 65%
                 # of the band; the stat strip keeps the big figure
                 block_w = min(int(block_w * 0.6), card_w - 225)
+            if card["num"] in (4, 9):
+                # v8: the shrunken block was narrower than its own
+                # caption word, so MISSING / SUNDAY PRINT spilled
+                # left over the scene band and clipped against its
+                # bottom edge. Widen the block just enough to hold
+                # the caption with padding on both sides (the
+                # figures themselves stay in the masthead strip).
+                cap0 = CARD_STAT[card["num"]][1]
+                cw0 = tracked_width(d, cap0, dsans_b(13), 2)
+                block_w = max(block_w, int(cw0) + 25)
         draw_card_band(d, x, band_y, card_w - block_w, 60, card)
         if block_w:
             d.rectangle([x + card_w - block_w, band_y, x + card_w,
@@ -1686,17 +1801,20 @@ def render():
             big, capword = CARD_STAT[card["num"]]
             if card["num"] in (4, 7, 9):
                 bf = fit_oneline(d, f"card{card['num']} stat", big,
-                                 serif_b, 48, 16, block_w - 22)
+                                 serif_b, 48, 16, block_w - 31)
             else:
                 bf = fit_oneline(d, f"card{card['num']} stat", big,
                                  serif_b, 48, 28, card_w - 60)
             bw2 = d.textlength(big, font=bf)
-            d.text((x + card_w - bw2, y + 38), big, font=bf, fill=col)
+            # v8: stat text sits 9px inside the card's right edge,
+            # never flush against it
+            d.text((x + card_w - 9 - bw2, y + 38), big, font=bf,
+                   fill=col)
             cf2 = fit_tracked(d, f"card{card['num']} stat caption",
                               capword, dsans_b, 13, 10, 2, card_w - 60)
             cw2 = tracked_width(d, capword, cf2, 2)
-            draw_tracked(d, x + card_w - cw2, y + 86, capword, cf2, 2,
-                         MID)
+            draw_tracked(d, x + card_w - 9 - cw2, y + 86, capword,
+                         cf2, 2, MID)
         hf, hlines, hlead = fit_box(d, f"card{card['num']} headline",
                                     card["headline"], lsans_b, 27, 19,
                                     card_w, 42, 1.04)
@@ -1727,7 +1845,7 @@ def render():
     hf2 = fit_tracked(d, "also heading", ah, dsans_b, 19, 15, 3, ba_w)
     draw_tracked(d, ba_x, hy, ah, hf2, 3, INK)
     ry = hy + 22
-    draw_map(d, M, ry, 850, 280)
+    draw_map(d, M, ry, 850, 280, img)
     cap = "Each number is the story with that number on this page."
     cf = fit_oneline(d, "map caption", cap, lsans, 16, 13, 848)
     d.text((M + 2, ry + 286), cap, font=cf, fill=MID)
