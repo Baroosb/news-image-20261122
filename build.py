@@ -7,14 +7,16 @@ of Sunday 22 November 2026: 3 leads, 10 cards and a 24-item also-list —
 37 stories, every one fact-audited against dated original reporting (see
 STORIES.md for the frozen story set and AUDIT.md for the audit trail).
 
-Version 3 is a premium redesign to a design panel's specification —
-Mark Porter's Guardian print redesign crossed with Swiss grid
-discipline, Monocle restraint: type does the work, decoration is
-removed. A strict six-colour palette (paper, ink, mid ink, hairline,
-oxblood, slate), one hairline weight used only as full-width section
-dividers, duotone spot art for the three leads, margin numerals, drop
-caps, square tier markers, an oversized ghost "22" in the masthead and
-a dotted map with oxblood pins. No boxes, no pills, no shadows.
+Version 4 rebuilds the page in the pattern of the winning entries of
+news-image-20261121: a full-colour editorial infographic. Colour is
+information — every region has its own muted print tone, used for the
+lead header bands, the card pictograms and stat figures, the map pins
+and the region tally. The leads carry real illustrated panels: a drawn
+mini-map of the Gulf for the Bahrain strike, a COP31 draft-document and
+overtime-clock panel, a Khartoum dusk skyline with drones. The cards
+carry coloured pictograms and the story's own big number where it has
+one; the world map is a filled landmass on an ocean panel with coloured
+numbered pins; the tiers ride in small coloured pills.
 
 The page is drawn programmatically with Pillow at 2048x2048
 (entry-master.png) and downscaled to the 1024x1024 entry.png that
@@ -48,9 +50,19 @@ def serif(size):
     return ImageFont.truetype(os.path.join(DEJA_DIR, "DejaVuSerif.ttf"), size)
 
 
+def serif_i(size):
+    return ImageFont.truetype(os.path.join(LIB_DIR,
+                                           "LiberationSerif-Italic.ttf"),
+                              size)
+
+
 def dsans_b(size):
     return ImageFont.truetype(os.path.join(DEJA_DIR, "DejaVuSans-Bold.ttf"),
                               size)
+
+
+def dsans(size):
+    return ImageFont.truetype(os.path.join(DEJA_DIR, "DejaVuSans.ttf"), size)
 
 
 def lsans(size):
@@ -70,9 +82,29 @@ MID = (87, 80, 74)               # #57504A
 HAIR = (213, 206, 193)           # #D5CEC1
 OXB = (138, 28, 19)              # #8A1C13
 SLATE = (51, 72, 79)             # #33484F
-INK_TINT = (112, 103, 94)        # ink family, for the tally bar
-SLATE_TINT = (104, 122, 128)     # slate family, for the tally bar
-MID_TINT = (152, 144, 134)       # mid family, for the tally bar
+WHITE = (250, 248, 242)          # paper-white, text on colour
+
+# muted editorial region tones — colour is the region code, everywhere
+REGION_COLORS = {
+    "Europe": (70, 100, 140),        # slate blue
+    "Asia": (34, 110, 104),          # teal
+    "Africa": (198, 118, 38),        # ochre
+    "Americas": (96, 122, 52),       # olive green
+    "Middle East": (138, 28, 19),    # oxblood red
+    "Global": (51, 72, 79),          # slate
+    "Oceania": (112, 72, 112),       # plum
+}
+
+TIER_COLORS = {
+    "CONFIRMED": (96, 122, 52),      # olive
+    "OFFICIAL": (70, 100, 140),      # slate blue
+    "REPORTED": (178, 102, 30),     # ochre
+}
+
+OCEAN = (188, 206, 216)          # map panel sea
+LAND_TONE = (233, 223, 196)      # map landmass
+SEA = (172, 196, 208)            # Gulf mini-map sea
+TAN = (226, 210, 174)            # Gulf mini-map land
 GHOST = (232, 217, 208)          # oxblood at ~10% over paper
 
 # ---------------------------------------------------------------- content
@@ -98,9 +130,9 @@ LEADS = [
         "body": ("The longest climate summit in history ended in disarray: "
                  "country after country rejected a cover text that never "
                  "mentioned fossil fuels, and the talks closed with nothing "
-                 "agreed. Britain said the text \u201cmoves us backwards on "
-                 "the science\u201d."),
-        "source": "\u2014 The Independent / GOV.UK, 22 Nov",
+                 "agreed. Britain said the text “moves us backwards on "
+                 "the science”."),
+        "source": "— The Independent / GOV.UK, 22 Nov",
         "tier": "CONFIRMED", "art": "cop",
     },
     {
@@ -110,9 +142,9 @@ LEADS = [
         "body": ("The Revolutionary Guard said its missiles and drones hit "
                  "US positions at the Al-Riffa and Awali bases overnight, "
                  "striking Patriot radars. Bahrain said a civilian industrial "
-                 "site was set ablaze, two people were injured \u2014 and took "
+                 "site was set ablaze, two people were injured — and took "
                  "the attack to the UN."),
-        "source": "\u2014 Xinhua / Arab News / Al Jazeera, 22 Nov",
+        "source": "— Xinhua / Arab News / Al Jazeera, 22 Nov",
         "tier": "CONFIRMED", "art": "missiles",
     },
     {
@@ -123,7 +155,7 @@ LEADS = [
                  "and damaged a United Nations building in a residential "
                  "neighbourhood, as explosions echoed around the airport "
                  "and homes were destroyed."),
-        "source": "\u2014 Al Jazeera / DW / AFP, 22 Nov",
+        "source": "— Al Jazeera / DW / AFP, 22 Nov",
         "tier": "CONFIRMED", "art": "drones",
     },
 ]
@@ -133,52 +165,52 @@ CARDS = [
      "headline": "Fifty missing in the factory ruins",
      "body": ("Rescuers comb the gutted Banten candy factory for 50 missing "
               "workers after Saturday evening's blaze. At least three are dead."),
-     "source": "\u2014 AP / DW, 22 Nov", "tier": "CONFIRMED", "art": "flame"},
+     "source": "— AP / DW, 22 Nov", "tier": "CONFIRMED", "art": "flame"},
     {"num": 5, "place": "SEOUL · EXAM CHAOS", "region": "Asia",
      "headline": "Exam chaos costs a minister his job",
      "body": ("Education Minister Choi Kyo-jin resigns over last-minute CSAT "
               "security changes driven by fears of AI cheating."),
-     "source": "\u2014 Yonhap / AFP, 22 Nov", "tier": "CONFIRMED", "art": "paper"},
+     "source": "— Yonhap / AFP, 22 Nov", "tier": "CONFIRMED", "art": "paper"},
     {"num": 6, "place": "BEIJING · MARKETS", "region": "Asia",
      "headline": "China loosens the margin screw",
      "body": ("The exchanges cut the minimum margin for leveraged share-buying "
               "from 100% to 80%, from 30 November."),
-     "source": "\u2014 SZSE / Bloomberg, 22 Nov", "tier": "OFFICIAL", "art": "chart"},
+     "source": "— SZSE / Bloomberg, 22 Nov", "tier": "OFFICIAL", "art": "chart"},
     {"num": 7, "place": "WELLINGTON · CRICKET", "region": "Oceania",
      "headline": "India pile up 720 in Wellington",
      "body": ("Pant's hundred powers a record 720/9 declared; New Zealand "
               "close day four at 119/2, trailing by 233."),
-     "source": "\u2014 Reuters / Sportstar, 22 Nov", "tier": "CONFIRMED", "art": "cricket"},
+     "source": "— Reuters / Sportstar, 22 Nov", "tier": "CONFIRMED", "art": "cricket"},
     {"num": 8, "place": "LAS VEGAS · FORMULA 1", "region": "Americas",
      "headline": "Verstappen wins a wild one in Vegas",
      "body": ("He beats Norris and Piastri as Russell's late lock-up drops him "
-              "to ninth \u2014 and the Ferraris collide again."),
-     "source": "\u2014 Formula1.com / Sky, 22 Nov", "tier": "CONFIRMED", "art": "car"},
+              "to ninth — and the Ferraris collide again."),
+     "source": "— Formula1.com / Sky, 22 Nov", "tier": "CONFIRMED", "art": "car"},
     {"num": 9, "place": "MARKETS · CRYPTO", "region": "Global",
      "headline": "Bitcoin bounces above $60,000",
-     "body": ("After a two-month low amid \u201cextreme fear\u201d, BTC rebounds "
+     "body": ("After a two-month low amid “extreme fear”, BTC rebounds "
               "as short sellers are squeezed out of crowded bets."),
-     "source": "\u2014 BeInCrypto, 22 Nov", "tier": "CONFIRMED", "art": "coin"},
+     "source": "— BeInCrypto, 22 Nov", "tier": "CONFIRMED", "art": "coin"},
     {"num": 10, "place": "WASHINGTON · IRAN WAR", "region": "Americas",
      "headline": "Trump: no regime change in Iran",
-     "body": ("\u201cI never cared too much about the regime\u201d \u2014 he wants "
+     "body": ("“I never cared too much about the regime” — he wants "
               "a permanent deal barring nuclear weapons instead."),
-     "source": "\u2014 India Today, 22 Nov", "tier": "REPORTED", "art": "dome"},
+     "source": "— India Today, 22 Nov", "tier": "REPORTED", "art": "dome"},
     {"num": 11, "place": "WASHINGTON · CYBER", "region": "Americas",
      "headline": "Trump shrugs at the FBI hack",
-     "body": ("The reported database breach is \u201cnot good\u201d, he says "
-              "\u2014 \u201cbut maybe we'll learn things.\u201d"),
-     "source": "\u2014 Euronews, 22 Nov", "tier": "REPORTED", "art": "shield"},
+     "body": ("The reported database breach is “not good”, he says "
+              "— “but maybe we'll learn things.”"),
+     "source": "— Euronews, 22 Nov", "tier": "REPORTED", "art": "shield"},
     {"num": 12, "place": "KYIV · UKRAINE", "region": "Europe",
-     "headline": "\u201cBig bosses can't decide fate\u201d",
-     "body": ("Zelenskyy answers the Trump\u2013Putin\u2013Xi meeting in China: "
+     "headline": "“Big bosses can't decide fate”",
+     "body": ("Zelenskyy answers the Trump–Putin–Xi meeting in China: "
               "big powers cannot settle the world's future."),
-     "source": "\u2014 Euromaidan Press, 22 Nov", "tier": "CONFIRMED", "art": "quote"},
+     "source": "— Euromaidan Press, 22 Nov", "tier": "CONFIRMED", "art": "quote"},
     {"num": 13, "place": "OYO · DIPLOMACY", "region": "Africa",
      "headline": "Kenya and the DRC mend fences",
      "body": ("Ruto and Tshisekedi agree in Oyo to restore diplomatic ties, "
               "at a four-leader meeting on peace and security."),
-     "source": "\u2014 The Standard, 22 Nov", "tier": "CONFIRMED", "art": "hands"},
+     "source": "— The Standard, 22 Nov", "tier": "CONFIRMED", "art": "hands"},
 ]
 
 ALSO = [
@@ -188,7 +220,7 @@ ALSO = [
     ("TEHRAN", "Moves to break the US blockade; threatens Gulf oil fields ablaze", "Yeshiva World"),
     ("HORMUZ", "Swimmer Lewis Pugh braves the strait for its wildlife", "Arab News"),
     ("VATICAN", "Pope Leo XIV lunches with 1,300 people living in poverty", "Vatican News"),
-    ("LONDON", "Minister condemns Trump's embrace of \u201cbutcher\u201d Putin", "Independent"),
+    ("LONDON", "Minister condemns Trump's embrace of “butcher” Putin", "Independent"),
     ("LONDON", "Theresa May to Burnham: just accept Brexit, move on", "Independent"),
     ("BERLIN", "Kraftwerk venue apologises over military AI launch", "Mezha"),
     ("KYIV", "UNICEF: record toll of children killed or injured in 2026", "UNICEF"),
@@ -220,6 +252,35 @@ PINS = {
     29: (-76.4, 39.4), 30: (-77.8, 37.9), 31: (77.2, 28.6), 32: (-0.2, 5.6),
     33: (28.2, -25.7), 34: (117.4, 38.9), 35: (6.0, 4.9), 36: (-76.8, 39.9),
     37: (31.7, 35.9),
+}
+
+# ------------------------------------------------------- v4 presentation
+# Region of each lead (the LEADS dicts carry no region field of their own)
+LEAD_REGION = {1: "Global", 2: "Middle East", 3: "Africa"}
+
+# A card's big figure, where the frozen text itself carries one:
+# story number -> (figure, caption). Figures and caption words are taken
+# from the frozen STATS / body text above, never invented.
+CARD_STAT = {
+    4: ("50", "MISSING"),
+    6: ("80%", "WAS 100%"),
+    7: ("720/9", "DECLARED"),
+    8: ("9TH", "RUSSELL"),
+    9: ("$61,197", "SUNDAY PRINT"),
+}
+
+# story number -> region, for the map pins and the brief chips
+# (regions as recorded in STORIES.md)
+PIN_REGION = {
+    1: "Global", 2: "Middle East", 3: "Africa", 4: "Asia", 5: "Asia",
+    6: "Asia", 7: "Oceania", 8: "Americas", 9: "Global", 10: "Americas",
+    11: "Americas", 12: "Europe", 13: "Africa", 14: "Europe",
+    15: "Africa", 16: "Europe", 17: "Middle East", 18: "Middle East",
+    19: "Europe", 20: "Europe", 21: "Europe", 22: "Europe",
+    23: "Europe", 24: "Asia", 25: "Oceania", 26: "Asia", 27: "Asia",
+    28: "Africa", 29: "Americas", 30: "Americas", 31: "Asia",
+    32: "Africa", 33: "Africa", 34: "Asia", 35: "Africa",
+    36: "Americas", 37: "Global",
 }
 
 
@@ -269,9 +330,9 @@ def _register(label, needed, box):
 def ellipsize(draw, text, fnt, max_w):
     if draw.textlength(text, font=fnt) <= max_w:
         return text
-    while text and draw.textlength(text + "\u2026", font=fnt) > max_w:
+    while text and draw.textlength(text + "…", font=fnt) > max_w:
         text = text[:-1]
-    return text.rstrip() + "\u2026"
+    return text.rstrip() + "…"
 
 
 def fit_box(draw, label, text, make_font, start, min_size, max_w, box_h,
@@ -369,128 +430,392 @@ def text_block(draw, x, y, lines, fnt, leading, fill=INK):
     return y
 
 
-def tier_marker(draw, x_right, y, tier, size=15, tracking=2, sq=8):
-    """A small ink square plus the tier word in tracked small caps,
-    right-aligned to x_right. No pills, no rounded rectangles."""
+# ------------------------------------------------------------- components
+def pill(draw, x, y, tier, size=13, light=False):
+    """A small coloured tier pill, drawn from its top-left corner.
+    Returns its width. `light` draws a paper pill with ink text, for
+    sitting on a coloured band."""
     fnt = dsans_b(size)
-    tw = tracked_width(draw, tier, fnt, tracking)
-    total = sq + 8 + tw
-    draw.rectangle([x_right - total, y + (size - sq) / 2 + 1,
-                    x_right - total + sq, y + (size - sq) / 2 + 1 + sq],
-                   fill=INK)
-    draw_tracked(draw, x_right - tw, y, tier, fnt, tracking, INK)
-    return total
+    tw = draw.textlength(tier, font=fnt)
+    w_ = tw + 22
+    h_ = size + 11
+    if light:
+        draw.rounded_rectangle([x, y, x + w_, y + h_], radius=h_ / 2,
+                               fill=PAPER)
+        draw.text((x + 11, y + 4), tier, font=fnt, fill=INK)
+    else:
+        draw.rounded_rectangle([x, y, x + w_, y + h_], radius=h_ / 2,
+                               fill=TIER_COLORS[tier])
+        draw.text((x + 11, y + 4), tier, font=fnt, fill=WHITE)
+    return w_
 
 
-# ------------------------------------------------------- duotone spot art
-# Each lead illustration is flat shapes in ink + oxblood only, drawn in a
-# wide strip inside a single 1px (2px at master scale) ink frame.
+def pill_width(draw, tier, size=13):
+    return draw.textlength(tier, font=dsans_b(size)) + 22
+
+
+def starburst(draw, cx, cy, r, fill, spikes=12, inner=0.42):
+    pts = []
+    for i in range(spikes * 2):
+        a = math.pi * i / spikes - math.pi / 2
+        rr = r if i % 2 == 0 else r * inner
+        pts.append((cx + math.cos(a) * rr, cy + math.sin(a) * rr))
+    draw.polygon(pts, fill=fill)
+
+
+def dashed_bezier(draw, p0, p1, p2, fill, width=4, dash=15, gap=10):
+    """A dashed quadratic-bezier stroke (missile routes on the map)."""
+    pts = []
+    for i in range(121):
+        t = i / 120
+        px = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t ** 2 * p2[0]
+        py = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t ** 2 * p2[1]
+        pts.append((px, py))
+    seg, pen = [], True
+    acc = 0.0
+    for i in range(1, len(pts)):
+        step = math.dist(pts[i - 1], pts[i])
+        if pen:
+            seg.append(pts[i - 1])
+        acc += step
+        limit = dash if pen else gap
+        if acc >= limit:
+            if pen and len(seg) >= 1:
+                draw.line(seg + [pts[i]], fill=fill, width=width)
+            seg, pen, acc = [], not pen, 0.0
+    if pen and len(seg) >= 1:
+        draw.line(seg + [pts[-1]], fill=fill, width=width)
+
+
+def lead_body(draw, x, y, lead, col_w, zone_h):
+    """Lead body with a drop cap: the first letter enlarged in the
+    region colour, the first two lines set narrower to clear it."""
+    body = lead["body"]
+    cap, rest = body[0], body[1:]
+    region = REGION_COLORS[LEAD_REGION[lead["num"]]]
+    size, fnt, cap_f, cap_w, lines = 19, None, None, 0, []
+    for size in (22, 21, 20, 19, 18):
+        fnt = lsans(size)
+        cap_f = serif_b(int(size * 2.8))
+        cap_w = draw.textlength(cap, font=cap_f)
+        widths = [col_w - cap_w - 14, col_w - cap_w - 14, col_w]
+        lines = wrap_var(draw, rest, fnt, widths)
+        if len(lines) * size * 1.24 <= zone_h:
+            break
+    height = len(lines) * size * 1.24
+    _register(f"lead{lead['num']} body", height, zone_h)
+    draw.text((x, y - size * 0.30), cap, font=cap_f, fill=region)
+    ly = y
+    for i, ln in enumerate(lines):
+        lx = x + (cap_w + 14 if i < 2 else 0)
+        draw.text((lx, ly), ln, font=fnt, fill=INK)
+        ly += size * 1.24
+    return size
+
+
+# ------------------------------------------------------- lead art panels
+# Each lead illustration is a full-colour panel drawn in code: a Gulf
+# mini-map, a COP31 document/clock panel, a Khartoum dusk skyline.
 def art_cop(d, x, y, w_, h):
-    """Concentric sun disc and a bold thermometer silhouette."""
-    cy = y + h / 2
-    # concentric sun: oxblood core, ink ring, oxblood ring, ink rays
-    cx, r = x + h * 0.62, h * 0.34
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=INK, width=4)
-    r2 = r * 0.68
-    d.ellipse([cx - r2, cy - r2, cx + r2, cy + r2], outline=OXB, width=4)
-    r3 = r * 0.38
-    d.ellipse([cx - r3, cy - r3, cx + r3, cy + r3], fill=OXB)
-    for a in range(0, 360, 45):
+    """COP31: slate name block, the draft text with 'fossil fuels'
+    struck out in oxblood, and an overtime pie-clock."""
+    d.rectangle([x, y, x + w_, y + h], fill=(238, 233, 219))
+    # summit name block
+    bw = 172
+    d.rectangle([x, y, x + bw, y + h], fill=SLATE)
+    f1 = serif_b(40)
+    _register("cop panel COP31", d.textlength("COP31", font=f1), bw - 16)
+    d.text((x + bw / 2, y + 26), "COP31", font=f1, fill=WHITE, anchor="ma")
+    f2 = dsans_b(16)
+    draw_tracked(d, x + (bw - tracked_width(d, "ANTALYA", f2, 3)) / 2,
+                 y + 82, "ANTALYA", f2, 3, WHITE)
+    f3 = dsans_b(11)
+    for i, ln in enumerate(["UN CLIMATE", "SUMMIT"]):
+        draw_tracked(d, x + (bw - tracked_width(d, ln, f3, 2)) / 2,
+                     y + 106 + i * 16, ln, f3, 2, (196, 208, 210))
+    # the draft document
+    dx, dy, dw, dh = x + 178, y + 12, 218, h - 24
+    d.rectangle([dx, dy, dx + dw, dy + dh], fill=(252, 250, 244),
+                outline=MID, width=2)
+    ft = dsans_b(14)
+    d.text((dx + 14, dy + 9), "DRAFT TEXT", font=ft, fill=INK)
+    for i, lw in enumerate([0.92, 0.80, 0.88]):
+        ly = dy + 36 + i * 12
+        d.line([dx + 14, ly, dx + 14 + (dw - 28) * lw, ly],
+               fill=(168, 160, 148), width=4)
+    ff = lsans_b(25)
+    strike = "fossil fuels"
+    _register("cop panel strike", d.textlength(strike, font=ff), dw - 24)
+    d.text((dx + 14, dy + 66), strike, font=ff, fill=OXB)
+    sw = d.textlength(strike, font=ff)
+    d.line([dx + 11, dy + 81, dx + 17 + sw, dy + 81], fill=OXB, width=4)
+    fc = dsans_b(11)
+    d.text((dx + 14, dy + 94), "NOT MENTIONED", font=fc, fill=MID)
+    # overtime pie-clock
+    cx, cy, r = x + w_ - 88, y + h / 2 - 18, 54
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(252, 250, 244),
+              outline=INK, width=3)
+    d.pieslice([cx - r, cy - r, cx + r, cy + r], start=-90, end=0, fill=OXB)
+    for a in range(0, 360, 30):
         rad = math.radians(a)
-        d.line([cx + math.cos(rad) * r * 1.18, cy + math.sin(rad) * r * 1.18,
-                cx + math.cos(rad) * r * 1.48, cy + math.sin(rad) * r * 1.48],
-               fill=INK, width=4)
-    # thermometer silhouette, right of centre
-    tx = x + w_ * 0.60
-    tube_w = h * 0.16
-    d.rectangle([tx, y + h * 0.14, tx + tube_w, y + h * 0.72], fill=INK)
-    bulb_r = h * 0.17
-    bcx, bcy = tx + tube_w / 2, y + h * 0.80
-    d.ellipse([bcx - bulb_r, bcy - bulb_r, bcx + bulb_r, bcy + bulb_r],
-              fill=INK)
-    mcy = y + h * 0.80
-    d.rectangle([tx + tube_w * 0.28, y + h * 0.30, tx + tube_w * 0.72, mcy],
-                fill=OXB)
-    br = bulb_r * 0.55
-    d.ellipse([bcx - br, bcy - br, bcx + br, bcy + br], fill=OXB)
-    for i in range(3):
-        yy = y + h * (0.24 + i * 0.18)
-        d.line([tx + tube_w + 8, yy, tx + tube_w + 26, yy], fill=INK, width=3)
-    # a rising oxblood line running away to the right edge
-    pts = [(x + w_ * 0.76, y + h * 0.74), (x + w_ * 0.84, y + h * 0.58),
-           (x + w_ * 0.91, y + h * 0.62), (x + w_ * 0.985, y + h * 0.30)]
-    d.line(pts, fill=OXB, width=5)
-    ex, ey = pts[-1]
-    d.polygon([(ex, ey), (ex - 16, ey + 3), (ex - 5, ey + 15)], fill=OXB)
-    # baseline
-    d.line([x + 10, y + h - 7, x + w_ - 10, y + h - 7], fill=INK, width=3)
+        d.line([cx + math.cos(rad) * (r - 9), cy + math.sin(rad) * (r - 9),
+                cx + math.cos(rad) * (r - 3), cy + math.sin(rad) * (r - 3)],
+               fill=INK, width=2)
+    d.line([cx, cy, cx + 6, cy - r * 0.62], fill=INK, width=4)
+    d.line([cx, cy, cx + r * 0.55, cy + 10], fill=INK, width=4)
+    d.ellipse([cx - 5, cy - 5, cx + 5, cy + 5], fill=INK)
+    fo = dsans_b(15)
+    label = "OVERTIME"
+    _register("cop panel overtime", tracked_width(d, label, fo, 2), 176)
+    draw_tracked(d, cx - tracked_width(d, label, fo, 2) / 2, y + h - 30,
+                 label, fo, 2, OXB)
 
 
-def art_missiles(d, x, y, w_, h):
-    """A night band: ink field, three oxblood missile arcs, paper stars."""
-    d.rectangle([x, y, x + w_, y + h], fill=INK)
-    for sx, sy in [(0.06, 0.22), (0.16, 0.5), (0.30, 0.16), (0.46, 0.34),
-                   (0.60, 0.14), (0.72, 0.44), (0.86, 0.2), (0.95, 0.52),
-                   (0.38, 0.58), (0.55, 0.55)]:
-        px, py = x + w_ * sx, y + h * sy
-        d.ellipse([px - 2.5, py - 2.5, px + 2.5, py + 2.5], fill=PAPER)
-    # three descending arcs ending in small bursts
-    for (x0, x1, peak) in [(0.04, 0.46, 0.60), (0.14, 0.62, 0.78),
-                            (0.02, 0.34, 0.42)]:
-        pts = []
-        for t in range(25):
-            tt = t / 24
-            px = x + w_ * (x0 + (x1 - x0) * tt)
-            py = y + h * (0.30 + peak * tt - 0.55 * tt * tt)
-            pts.append((px, py))
-        d.line(pts, fill=OXB, width=5)
-        ex, ey = pts[-1]
-        for a in range(0, 360, 45):
-            rad = math.radians(a)
-            d.line([ex, ey, ex + math.cos(rad) * 13, ey + math.sin(rad) * 13],
-                   fill=OXB, width=4)
-    # horizon: a paper line, with oxblood base blocks standing on it
-    hy = y + h * 0.88
-    d.line([x, hy, x + w_, hy], fill=PAPER, width=3)
-    for bx, bw, bh in [(0.58, 0.10, 0.16), (0.70, 0.07, 0.24),
-                       (0.79, 0.12, 0.13), (0.93, 0.05, 0.20)]:
-        d.rectangle([x + w_ * bx, hy - h * bh, x + w_ * (bx + bw), hy],
-                    fill=OXB)
-    # one pale dome among the blocks
-    dx = x + w_ * 0.845
-    d.pieslice([dx, hy - h * 0.20, dx + w_ * 0.055, hy + h * 0.06], 180, 360,
-               fill=PAPER)
+def art_gulf(d, x, y, w_, h):
+    """A drawn mini-map of the Gulf: tan land, blue sea, dashed oxblood
+    strike routes from Iran to Bahrain, a starburst on the island."""
+    d.rectangle([x, y, x + w_, y + h], fill=SEA)
+
+    def P(u, v):
+        return (x + u * w_, y + v * h)
+
+    # Iran, across the top
+    iran = [(0.50, 0.0), (1.0, 0.0), (1.0, 0.54), (0.95, 0.52),
+            (0.90, 0.40), (0.83, 0.43), (0.77, 0.32), (0.68, 0.36),
+            (0.61, 0.25), (0.55, 0.28), (0.50, 0.16)]
+    d.polygon([P(u, v) for u, v in iran], fill=TAN)
+    # Arabia, bottom-left, its coast facing the Gulf
+    arabia = [(0.0, 0.30), (0.14, 0.36), (0.23, 0.44), (0.30, 0.55),
+              (0.37, 0.66), (0.47, 0.79), (0.58, 0.90), (0.68, 1.0),
+              (0.0, 1.0)]
+    d.polygon([P(u, v) for u, v in arabia], fill=TAN)
+    # Qatar, a small peninsula on the Arabian coast
+    qatar = [(0.252, 0.475), (0.285, 0.385), (0.315, 0.40), (0.322, 0.50),
+             (0.30, 0.565), (0.268, 0.55)]
+    d.polygon([P(u, v) for u, v in qatar], fill=TAN)
+    # Oman / UAE corner, bottom-right, with the Musandam jut
+    oman = [(0.80, 1.0), (0.86, 0.80), (0.915, 0.66), (0.945, 0.545),
+            (0.965, 0.60), (1.0, 0.60), (1.0, 1.0)]
+    d.polygon([P(u, v) for u, v in oman], fill=TAN)
+    # Bahrain island
+    bx, by = P(0.345, 0.475)
+    d.ellipse([bx - 8, by - 6, bx + 8, by + 6], fill=TAN, outline=INK,
+              width=2)
+    # dashed strike routes, Iran coast -> Bahrain
+    dashed_bezier(d, P(0.70, 0.345), P(0.55, 0.02), (bx, by), OXB, 4)
+    dashed_bezier(d, P(0.79, 0.415), P(0.62, 0.08), (bx, by), OXB, 4)
+    starburst(d, bx, by, 21, OXB)
+    d.ellipse([bx - 4, by - 4, bx + 4, by + 4], fill=INK)
+    # labels
+    fi = dsans_b(23)
+    _register("gulf label IRAN", tracked_width(d, "IRAN", fi, 5), 200)
+    draw_tracked(d, *P(0.76, 0.10), "IRAN", fi, 5, INK)
+    fs = dsans_b(15)
+    _register("gulf label SAUDI", tracked_width(d, "SAUDI ARABIA", fs, 2),
+              190)
+    draw_tracked(d, *P(0.035, 0.80), "SAUDI ARABIA", fs, 2, INK)
+    fq = dsans_b(13)
+    _register("gulf label QATAR", tracked_width(d, "QATAR", fq, 2), 90)
+    draw_tracked(d, *P(0.145, 0.415), "QATAR", fq, 2, INK)
+    fb = dsans_b(17)
+    _register("gulf label BAHRAIN", tracked_width(d, "BAHRAIN", fb, 2), 150)
+    draw_tracked(d, *P(0.155, 0.13), "BAHRAIN", fb, 2, INK)
+    fa = dsans_b(10)
+    _register("gulf label bases",
+              tracked_width(d, "AL-RIFFA · AWALI BASES", fa, 0.5), 170)
+    draw_tracked(d, *P(0.155, 0.225), "AL-RIFFA · AWALI BASES", fa, 0.5,
+                 OXB)
+    fg = dsans(16)
+    _register("gulf label THE GULF", tracked_width(d, "THE GULF", fg, 3),
+              150)
+    draw_tracked(d, *P(0.545, 0.70), "THE GULF", fg, 3, (40, 60, 68))
+    fh = dsans_b(10)
+    _register("gulf label HORMUZ",
+              tracked_width(d, "STRAIT OF HORMUZ", fh, 0.5), 200)
+    draw_tracked(d, *P(0.655, 0.475), "STRAIT OF HORMUZ", fh, 0.5,
+                 (40, 60, 68))
+    # compass
+    nx, ny = P(0.035, 0.10)
+    d.polygon([(nx, ny - 13), (nx + 6, ny + 6), (nx, ny + 1),
+               (nx - 6, ny + 6)], fill=INK)
+    d.text((nx, ny + 9), "N", font=dsans_b(13), fill=INK, anchor="ma")
 
 
-def art_drones(d, x, y, w_, h):
-    """Skyline blocks in ink along the bottom, drone X shapes in oxblood."""
-    base = y + h - 6
-    heights = [0.34, 0.58, 0.42, 0.72, 0.5, 0.64, 0.38, 0.56, 0.46, 0.68,
-               0.4, 0.52]
-    bx = x + 8
+def art_khartoum(d, x, y, w_, h):
+    """Khartoum at dusk: banded sky, a low sun, smoke over an ink
+    skyline, a UN tower, filled drone silhouettes, oxblood blasts."""
+    # banded dusk sky, slate at the top warming to ochre at the horizon
+    top = (74, 88, 96)
+    mid = (168, 116, 66)
+    low = (226, 178, 112)
+    horizon = y + h * 0.66
+    yy = y
+    while yy < horizon:
+        t = (yy - y) / max(1, horizon - y)
+        if t < 0.5:
+            tt = t * 2
+            col = tuple(int(top[i] + (mid[i] - top[i]) * tt)
+                        for i in range(3))
+        else:
+            tt = (t - 0.5) * 2
+            col = tuple(int(mid[i] + (low[i] - mid[i]) * tt)
+                        for i in range(3))
+        d.line([x, yy, x + w_, yy], fill=col)
+        yy += 3
+    d.rectangle([x, horizon, x + w_, y + h], fill=(52, 44, 38))
+    # low sun
+    sx, sy, sr = x + w_ * 0.80, horizon - 16, 27
+    d.ellipse([sx - sr, sy - sr, sx + sr, sy + sr], fill=(243, 216, 150))
+    # skyline silhouette
+    base = y + h
+    heights = [0.30, 0.46, 0.36, 0.58, 0.42, 0.52, 0.34, 0.48, 0.38, 0.55,
+               0.40, 0.44]
+    bx = x + 6
+    tops = []
     i = 0
-    while bx < x + w_ - 30:
-        bw = w_ * 0.068
+    while bx < x + w_ - 34:
+        bw = w_ * 0.066
         bh = h * heights[i % len(heights)]
         d.rectangle([bx, base - bh, bx + bw, base], fill=INK)
-        bx += bw + 7
+        tops.append((bx + bw / 2, base - bh))
+        bx += bw + 6
         i += 1
-    d.line([x + 4, base + 3, x + w_ - 4, base + 3], fill=INK, width=3)
-    # drones: an X of two crossed lines with a small centre ring
-    for (dx, dy, s) in [(0.16, 0.30, 1.0), (0.40, 0.18, 0.72),
-                        (0.63, 0.36, 0.85), (0.86, 0.16, 0.6)]:
-        cx, cy = x + w_ * dx, y + h * dy
-        r = h * 0.17 * s
-        for sx, sy in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
-            ex, ey = cx + sx * r, cy + sy * r * 0.72
-            d.line([cx, cy, ex, ey], fill=OXB, width=5)
-            d.ellipse([ex - 6 * s, ey - 6 * s, ex + 6 * s, ey + 6 * s],
-                      outline=OXB, width=4)
-        cr = r * 0.30
-        d.ellipse([cx - cr, cy - cr, cx + cr, cy + cr], outline=OXB, width=4)
+    # the UN tower: taller, with a flag and the letters
+    ux, uw = x + w_ * 0.435, w_ * 0.085
+    uh = h * 0.72
+    d.rectangle([ux, base - uh, ux + uw, base], fill=INK)
+    d.line([ux + uw / 2, base - uh, ux + uw / 2, base - uh - 20],
+           fill=INK, width=3)
+    d.polygon([(ux + uw / 2, base - uh - 20), (ux + uw / 2 + 24,
+               base - uh - 14), (ux + uw / 2, base - uh - 8)],
+              fill=(120, 170, 205))
+    fu = dsans_b(21)
+    _register("khartoum UN", d.textlength("UN", font=fu), uw)
+    d.text((ux + uw / 2, base - uh + 14), "UN", font=fu, fill=WHITE,
+           anchor="ma")
+    # smoke plumes: layered ellipses drifting up-right from two roofs
+    for (px, py) in [tops[2], tops[7]]:
+        for k in range(4):
+            ex = px + k * 17
+            ey = py - 12 - k * 15
+            er = 13 + k * 6
+            shade = (140 + k * 22, 132 + k * 22, 124 + k * 21)
+            d.ellipse([ex - er, ey - er * 0.62, ex + er, ey + er * 0.62],
+                      fill=shade)
+    # blast starbursts on the skyline
+    starburst(d, tops[4][0], tops[4][1] + 4, 15, OXB)
+    starburst(d, tops[9][0], tops[9][1] + 4, 13, OXB)
+    # drones: filled quadcopter silhouettes
+    for (du, dv, s) in [(0.16, 0.20, 1.0), (0.52, 0.13, 0.78),
+                        (0.68, 0.30, 0.62)]:
+        cx, cy = x + w_ * du, y + h * dv
+        r = 24 * s
+        for (ax, ay) in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
+            ex, ey = cx + ax * r, cy + ay * r * 0.62
+            d.line([cx, cy, ex, ey], fill=INK, width=max(3, int(5 * s)))
+            d.ellipse([ex - 8 * s, ey - 3.5 * s, ex + 8 * s, ey + 3.5 * s],
+                      fill=INK)
+        d.ellipse([cx - 8 * s, cy - 5 * s, cx + 8 * s, cy + 5 * s],
+                  fill=INK)
 
 
-ART = {"cop": art_cop, "missiles": art_missiles, "drones": art_drones}
+ART = {"cop": art_cop, "missiles": art_gulf, "drones": art_khartoum}
+
+# ------------------------------------------------------------ pictograms
+# Simple bold glyphs in paper-white on a region-colour chip.
+def draw_icon(d, x, y, s, kind, region):
+    d.rounded_rectangle([x, y, x + s, y + s], radius=8,
+                        fill=REGION_COLORS[region])
+    fg = WHITE
+
+    def R(u0, v0, u1, v1):
+        return [x + u0 * s, y + v0 * s, x + u1 * s, y + v1 * s]
+
+    def L(pts, wdt=4):
+        d.line([(x + u * s, y + v * s) for u, v in pts], fill=fg, width=wdt)
+
+    if kind == "flame":      # factory with a flame over the chimney
+        d.rectangle(R(0.20, 0.46, 0.72, 0.86), fill=fg)
+        d.rectangle(R(0.26, 0.24, 0.38, 0.46), fill=fg)
+        d.polygon([(x + 0.32 * s, y + 0.06 * s), (x + 0.40 * s, y + 0.20 * s),
+                   (x + 0.24 * s, y + 0.20 * s)], fill=fg)
+        for (wu, wv) in [(0.30, 0.58), (0.46, 0.58), (0.30, 0.72),
+                         (0.46, 0.72)]:
+            d.rectangle(R(wu, wv, wu + 0.09, wv + 0.09),
+                        fill=REGION_COLORS[region])
+    elif kind == "paper":    # exam sheet with a tick
+        d.rectangle(R(0.28, 0.13, 0.72, 0.87), fill=fg)
+        for i, lw in enumerate([0.30, 0.34, 0.26]):
+            ly = 0.28 + i * 0.13
+            d.line([x + 0.36 * s, y + ly * s, x + (0.36 + lw) * s,
+                    y + ly * s], fill=REGION_COLORS[region], width=4)
+        L([(0.38, 0.70), (0.48, 0.79), (0.64, 0.60)], 5)
+        # redraw the tick in the region colour on the white sheet
+        d.line([(x + 0.38 * s, y + 0.70 * s), (x + 0.48 * s, y + 0.79 * s),
+                (x + 0.64 * s, y + 0.60 * s)], fill=REGION_COLORS[region],
+               width=5)
+    elif kind == "chart":    # margin arrow, rising
+        L([(0.18, 0.16), (0.18, 0.82), (0.84, 0.82)], 4)
+        L([(0.24, 0.66), (0.44, 0.48), (0.56, 0.56), (0.76, 0.30)], 5)
+        d.polygon([(x + 0.80 * s, y + 0.22 * s), (x + 0.80 * s, y + 0.40 * s),
+                   (x + 0.64 * s, y + 0.28 * s)], fill=fg)
+    elif kind == "cricket":  # bat and ball
+        d.polygon([(x + 0.30 * s, y + 0.30 * s), (x + 0.44 * s, y + 0.40 * s),
+                   (x + 0.34 * s, y + 0.82 * s), (x + 0.18 * s, y + 0.72 * s)],
+                  fill=fg)
+        L([(0.38, 0.34), (0.58, 0.16)], 6)
+        d.ellipse(R(0.60, 0.58, 0.84, 0.82), fill=fg)
+        d.arc(R(0.65, 0.58, 0.89, 0.82), start=100, end=260,
+              fill=REGION_COLORS[region], width=3)
+    elif kind == "car":      # chequered flag
+        L([(0.26, 0.12), (0.26, 0.88)], 5)
+        d.rectangle(R(0.26, 0.14, 0.82, 0.52), fill=fg)
+        for r_ in range(2):
+            for c_ in range(3):
+                if (r_ + c_) % 2 == 0:
+                    d.rectangle(R(0.26 + c_ * 0.187, 0.14 + r_ * 0.19,
+                                  0.26 + (c_ + 1) * 0.187,
+                                  0.14 + (r_ + 1) * 0.19),
+                                fill=REGION_COLORS[region])
+    elif kind == "coin":     # bitcoin-ish B in a ring
+        d.ellipse(R(0.14, 0.14, 0.86, 0.86), outline=fg, width=5)
+        fb = serif_b(int(s * 0.52))
+        d.text((x + s / 2, y + s * 0.47), "B", font=fb, fill=fg,
+               anchor="mm")
+        for bx in (0.44, 0.56):
+            d.line([x + bx * s, y + 0.22 * s, x + bx * s, y + 0.30 * s],
+                   fill=fg, width=3)
+            d.line([x + bx * s, y + 0.70 * s, x + bx * s, y + 0.78 * s],
+                   fill=fg, width=3)
+    elif kind == "dome":     # capitol dome
+        d.pieslice(R(0.26, 0.22, 0.74, 0.66), start=180, end=360, fill=fg)
+        L([(0.50, 0.10), (0.50, 0.24)], 4)
+        d.rectangle(R(0.18, 0.64, 0.82, 0.72), fill=fg)
+        for cu in (0.26, 0.42, 0.58, 0.72):
+            d.rectangle(R(cu, 0.72, cu + 0.05, 0.84), fill=fg)
+        d.rectangle(R(0.16, 0.84, 0.84, 0.89), fill=fg)
+    elif kind == "shield":   # shield with a bolt
+        d.polygon([(x + 0.50 * s, y + 0.12 * s), (x + 0.80 * s, y + 0.22 * s),
+                   (x + 0.78 * s, y + 0.52 * s), (x + 0.50 * s, y + 0.88 * s),
+                   (x + 0.22 * s, y + 0.52 * s), (x + 0.20 * s, y + 0.22 * s)],
+                  outline=fg, width=5)
+        d.polygon([(x + 0.55 * s, y + 0.30 * s), (x + 0.40 * s, y + 0.55 * s),
+                   (x + 0.50 * s, y + 0.55 * s), (x + 0.44 * s, y + 0.74 * s),
+                   (x + 0.62 * s, y + 0.46 * s), (x + 0.51 * s, y + 0.46 * s)],
+                  fill=fg)
+    elif kind == "quote":    # big quotation mark
+        fq = serif_b(int(s * 0.78))
+        d.text((x + s / 2, y + s * 0.52), "“", font=fq, fill=fg,
+               anchor="mm")
+    elif kind == "hands":    # fence mended: posts and rails
+        for pu in (0.24, 0.47, 0.70):
+            d.rectangle(R(pu, 0.20, pu + 0.08, 0.84), fill=fg)
+            d.polygon([(x + pu * s, y + 0.20 * s),
+                       (x + (pu + 0.04) * s, y + 0.12 * s),
+                       (x + (pu + 0.08) * s, y + 0.20 * s)], fill=fg)
+        d.rectangle(R(0.16, 0.36, 0.84, 0.44), fill=fg)
+        d.rectangle(R(0.16, 0.60, 0.84, 0.68), fill=fg)
+
 
 # ---------------------------------------------------------------- the map
 LAND = [
@@ -514,73 +839,55 @@ def is_land(lon, lat):
 
 
 def draw_map(d, x, y, w_, h):
-    """Dotted world map: mid-ink dots on the paper, oxblood pins with
-    paper numerals. Latitude range 76..-48 keeps the dots near-square."""
-    cols, rows = 88, 30
-    sx, sy = w_ / cols, h / rows
+    """Filled world map: dense pale dots merge into landmasses on a
+    light ocean panel; pins are coloured by region, numbered in white."""
+    d.rectangle([x, y, x + w_, y + h], fill=OCEAN)
+    cols = 148
+    sx = w_ / cols
+    rows = int(h / sx)
+    sy = h / rows
+    r = sx * 0.62
     for r_ in range(rows):
         lat = 76 - (r_ + 0.5) * (124 / rows)
         for c_ in range(cols):
             lon = -172 + (c_ + 0.5) * (356 / cols)
             if is_land(lon, lat):
                 cx, cy = x + (c_ + 0.5) * sx, y + (r_ + 0.5) * sy
-                d.ellipse([cx - 3.1, cy - 3.1, cx + 3.1, cy + 3.1], fill=MID)
+                d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=LAND_TONE)
+    d.rectangle([x, y, x + w_, y + h], outline=INK, width=2)
     pf = dsans_b(13)
     for num, (lon, lat) in PINS.items():
         px = x + (lon + 172) / 356 * w_
         py = y + (76 - lat) / 124 * h
-        r = 11.5
-        d.ellipse([px - r, py - r, px + r, py + r], fill=OXB)
-        d.text((px, py), str(num), font=pf, fill=PAPER, anchor="mm")
+        rr = 11.5
+        d.ellipse([px - rr, py - rr, px + rr, py + rr],
+                  fill=REGION_COLORS[PIN_REGION[num]], outline=PAPER,
+                  width=2)
+        d.text((px, py), str(num), font=pf, fill=WHITE, anchor="mm")
 
 
 def brief_width(d, num, place, txt, src, src_size):
     fb, fr = lsans_b(22), lsans(22)
-    fn = serif_b(20)
     fs = lsans(src_size)
-    return (d.textlength(str(num), font=fn) + 9
-            + d.textlength(place, font=fb)
-            + d.textlength(" \u2014 " + txt, font=fr)
+    return (34 + d.textlength(place, font=fb)
+            + d.textlength(" — " + txt, font=fr)
             + d.textlength(f" ({src})", font=fs))
 
 
 def draw_brief(d, x, y, num, place, txt, src, src_size):
     fb, fr = lsans_b(22), lsans(22)
-    fn = serif_b(20)
     fs = lsans(src_size)
-    d.text((x, y), str(num), font=fn, fill=INK)
-    cx = x + d.textlength(str(num), font=fn) + 9
+    col = REGION_COLORS[PIN_REGION[num]]
+    d.ellipse([x, y - 1, x + 25, y + 24], fill=col)
+    d.text((x + 12.5, y + 11), str(num), font=dsans_b(13), fill=WHITE,
+           anchor="mm")
+    cx = x + 34
     d.text((cx, y), place, font=fb, fill=INK)
     cx += d.textlength(place, font=fb)
-    body = " \u2014 " + txt
+    body = " — " + txt
     d.text((cx, y), body, font=fr, fill=INK)
     cx += d.textlength(body, font=fr)
     d.text((cx, y), f" ({src})", font=fs, fill=MID)
-
-
-def lead_body(draw, x, y, lead, col_w, zone_h):
-    """Lead body with a drop cap: the first letter enlarged in oxblood
-    serif, the first two lines set narrower to clear it."""
-    body = lead["body"]
-    cap, rest = body[0], body[1:]
-    size, fnt, cap_f, cap_w, lines = 19, None, None, 0, []
-    for size in (22, 21, 20, 19):
-        fnt = lsans(size)
-        cap_f = serif_b(int(size * 2.8))
-        cap_w = draw.textlength(cap, font=cap_f)
-        widths = [col_w - cap_w - 14, col_w - cap_w - 14, col_w]
-        lines = wrap_var(draw, rest, fnt, widths)
-        if len(lines) * size * 1.24 <= zone_h:
-            break
-    height = len(lines) * size * 1.24
-    _register(f"lead{lead['num']} body", height, zone_h)
-    draw.text((x, y - size * 0.30), cap, font=cap_f, fill=OXB)
-    ly = y
-    for i, ln in enumerate(lines):
-        lx = x + (cap_w + 14 if i < 2 else 0)
-        draw.text((lx, ly), ln, font=fnt, fill=INK)
-        ly += size * 1.24
-    return size
 
 
 # ---------------------------------------------------------------- layout
@@ -594,88 +901,125 @@ def render():
     def divider(y):
         d.line([M, y, right, y], fill=HAIR, width=2)
 
-    # ghost numeral "22", oxblood at ~10%, cropped by the masthead rule
-    DIV1 = 258
-    ghost_layer = Image.new("RGB", (W, H), PAPER)
-    gd = ImageDraw.Draw(ghost_layer)
-    gf = serif_b(300)
-    gw = gd.textlength("22", font=gf)
-    gd.text((right + 10 - gw, 0), "22", font=gf, fill=GHOST)
-    img.paste(ghost_layer.crop((0, 0, W, DIV1)), (0, 0))
-    d = ImageDraw.Draw(img)
-
     # top microtext row
     lf = fit_tracked(d, "microtext left", "THE WORLD IN ONE DAY", dsans_b,
                      24, 18, 4, CW * 0.42)
-    draw_tracked(d, M, 30, "THE WORLD IN ONE DAY", lf, 4, INK)
-    tag = ("37 STORIES \u00b7 7 REGIONS \u00b7 EVERY ONE DATED "
+    draw_tracked(d, M, 26, "THE WORLD IN ONE DAY", lf, 4, INK)
+    tag = ("37 STORIES · 7 REGIONS · EVERY ONE DATED "
            "SUNDAY 22 NOVEMBER 2026")
-    tf = fit_tracked(d, "microtext right", tag, dsans_b, 23, 17, 2, CW * 0.60)
+    tf = fit_tracked(d, "microtext right", tag, dsans_b, 23, 17, 2,
+                     CW * 0.60)
     tw = tracked_width(d, tag, tf, 2)
-    draw_tracked(d, right - tw, 31, tag, tf, 2, MID)
+    draw_tracked(d, right - tw, 27, tag, tf, 2, MID)
 
     # the date, as large as the measure allows
     date = "22 November 2026"
-    df = fit_oneline(d, "date display", date, serif_b, 184, 148, CW)
-    d.text((M, 72), date, font=df, fill=INK)
+    df = fit_oneline(d, "date display", date, serif_b, 168, 132, CW)
+    d.text((M, 56), date, font=df, fill=INK)
+
+    # standfirst: the three lead headlines, italic, diamond-separated
+    stand = ("COP31 ends with no deal at all ◆ Iran strikes US bases in "
+             "Bahrain ◆ Drones hit Khartoum, and a UN building")
+    sf = fit_oneline(d, "standfirst", stand, serif_i, 30, 24, CW)
+    d.text((M + 2, 210), stand, font=sf, fill=MID)
+    DIV1 = 252
     divider(DIV1)
 
-    # stat strip: serif figures in oxblood on a shared baseline, captions
-    # confined to their own column
+    # stat strip: ink serif figures on a shared baseline, captions in
+    # their own columns, hairline uprights between the columns
     col_w = CW / 6
-    base_y = DIV1 + 92
+    base_y = DIV1 + 76
     for i, (big, cap) in enumerate(STATS):
         cx = M + i * col_w
-        bf = fit_oneline(d, f"stat {big}", big, serif_b, 104, 52, col_w - 20)
-        d.text((cx + 10, base_y), big, font=bf, fill=OXB, anchor="ls")
+        if i:
+            d.line([cx, DIV1 + 18, cx, DIV1 + 118], fill=HAIR, width=2)
+        bf = fit_oneline(d, f"stat {big}", big, serif_b, 100, 50,
+                         col_w - 20)
+        d.text((cx + 10, base_y), big, font=bf, fill=INK, anchor="ls")
         cf, clines, clead = fit_box(d, f"stat caption {big}", cap, lsans,
                                     19, 16, col_w - 20, 42, 1.18)
-        text_block(d, cx + 10, base_y + 16, clines, cf, clead, fill=MID)
-    DIV2 = 424
+        text_block(d, cx + 10, base_y + 14, clines, cf, clead, fill=MID)
+
+    # region tally, high on the page as in the winning entries: an ink
+    # label block, then one coloured segmented bar with the region
+    # names and counts set inside their segments, in white
+    RY = 398
+    lab_w = 168
+    lf2 = fit_tracked(d, "region label", "BY REGION", dsans_b, 16, 13, 2,
+                      lab_w - 16)
+    d.rectangle([M, RY, M + lab_w, RY + 30], fill=INK)
+    draw_tracked(d, M + (lab_w - tracked_width(d, "BY REGION", lf2, 2)) / 2,
+                 RY + 7, "BY REGION", lf2, 2, WHITE)
+    total = sum(n for _, n in REGION_TALLY)
+    tally_names = {"EUROPE": "Europe", "ASIA": "Asia", "AFRICA": "Africa",
+                   "AMERICAS": "Americas", "MIDDLE EAST": "Middle East",
+                   "GLOBAL": "Global", "OCEANIA": "Oceania"}
+    cx = M + lab_w
+    bar_w = CW - lab_w
+    for name, n in REGION_TALLY:
+        wseg = bar_w * n / total
+        col = REGION_COLORS[tally_names[name]]
+        d.rectangle([cx, RY, cx + wseg, RY + 30], fill=col)
+        label = f"{name} {n}"
+        lf3 = fit_tracked(d, f"tally {name}", label, dsans_b, 14, 10, 1,
+                          wseg - 8)
+        tw3 = tracked_width(d, label, lf3, 1)
+        draw_tracked(d, cx + (wseg - tw3) / 2, RY + 8, label, lf3, 1,
+                     WHITE)
+        cx += wseg
+    DIV2 = 440
     divider(DIV2)
 
-    # leads: margin numeral + kicker, duotone art in a 1px frame,
-    # serif headline, drop-cap body, source + square tier marker
-    y0 = 440
+    # leads: a coloured header band (number + kicker + tier pill), the
+    # illustrated panel, serif headline, drop-cap body, source + pill
+    y0 = 452
     lead_w = 597
     lead_gap = 32
     for i, lead in enumerate(LEADS):
         x = M + i * (lead_w + lead_gap)
-        num = f"{lead['num']:02d}"
-        nf = serif_b(70)
-        num_w = d.textlength(num, font=nf)
-        _register(f"lead{lead['num']} numeral", num_w, lead_w)
-        d.text((x, y0), num, font=nf, fill=INK)
+        region = LEAD_REGION[lead["num"]]
+        col = REGION_COLORS[region]
+        d.rectangle([x, y0, x + lead_w, y0 + 34], fill=col)
+        nf = serif_b(23)
+        num_s = f"{lead['num']:02d}"
+        _register(f"lead{lead['num']} band num",
+                  d.textlength(num_s, font=nf), 60)
+        d.text((x + 12, y0 + 4), num_s, font=nf, fill=WHITE)
+        pw = pill_width(d, lead["tier"], 13)
         kf = fit_tracked(d, f"lead{lead['num']} kicker", lead["kicker"],
-                         dsans_b, 17, 13, 3, lead_w - num_w - 14)
-        draw_tracked(d, x + num_w + 14, y0 + 25, lead["kicker"], kf, 3, MID)
-        ay = y0 + 78
-        d.rectangle([x, ay, x + lead_w, ay + 80], outline=INK, width=2)
-        ART[lead["art"]](d, x + 3, ay + 3, lead_w - 6, 74)
+                         dsans_b, 17, 13, 3, lead_w - 70 - pw - 24)
+        draw_tracked(d, x + 62, y0 + 8, lead["kicker"], kf, 3, WHITE)
+        pill(d, x + lead_w - pw - 8, y0 + 5, lead["tier"], 13, light=True)
+        ay = y0 + 42
+        ART[lead["art"]](d, x, ay, lead_w, 140)
+        d.rectangle([x, ay, x + lead_w, ay + 140], outline=INK, width=2)
         hf, hlines, hlead = fit_box(d, f"lead{lead['num']} headline",
-                                    lead["headline"], serif_b, 48, 34,
-                                    lead_w, 98, 1.02)
-        text_block(d, x, ay + 90, hlines, hf, hlead)
-        lead_body(d, x, ay + 196, lead, lead_w, 124)
-        sy = ay + 330
-        tier_w = tracked_width(d, lead["tier"], dsans_b(15), 2) + 16
-        sf = fit_oneline(d, f"lead{lead['num']} source", lead["source"],
-                         lsans, 18, 14, lead_w - tier_w - 16)
-        d.text((x, sy), lead["source"], font=sf, fill=MID)
-        tier_marker(d, x + lead_w, sy + 1, lead["tier"])
-    DIV3 = 880
+                                    lead["headline"], serif_b, 46, 30,
+                                    lead_w, 66, 1.02)
+        text_block(d, x, ay + 150, hlines, hf, hlead)
+        lead_body(d, x, ay + 224, lead, lead_w, 112)
+        sy = ay + 336
+        pw2 = pill_width(d, lead["tier"], 13)
+        sf2 = fit_oneline(d, f"lead{lead['num']} source", lead["source"],
+                          lsans, 18, 14, lead_w - pw2 - 16)
+        d.text((x, sy + 2), lead["source"], font=sf2, fill=MID)
+        pill(d, x + lead_w - pw2, sy, lead["tier"], 13)
+    DIV3 = 866
     divider(DIV3)
 
-    # mid cards, two rows of five: numeral + place, bold sans headline,
-    # brief body, source + tier marker — separated by whitespace only
-    y0 = 894
+    # mid cards, two rows of five: numeral + place + a colour rule,
+    # pictogram chip with the story's big figure, headline, body,
+    # source + tier pill
+    y0 = 878
     card_w = 345
     card_gap = 32
-    row_h = 200
+    row_h = 247
     for idx, card in enumerate(CARDS):
-        row, col = divmod(idx, 5)
-        x = M + col * (card_w + card_gap)
-        y = y0 + row * (row_h + 8)
+        row, col_i = divmod(idx, 5)
+        x = M + col_i * (card_w + card_gap)
+        y = y0 + row * (row_h + 10)
+        region = card["region"]
+        col = REGION_COLORS[region]
         num = f"{card['num']:02d}"
         nf = serif_b(29)
         num_w = d.textlength(num, font=nf)
@@ -683,41 +1027,65 @@ def render():
         kf = fit_tracked(d, f"card{card['num']} kicker", card["place"],
                          dsans_b, 15, 12, 2.5, card_w - num_w - 9)
         draw_tracked(d, x + num_w + 9, y + 7, card["place"], kf, 2.5, MID)
+        d.rectangle([x, y + 34, x + card_w, y + 38], fill=col)
+        draw_icon(d, x, y + 44, 44, card["art"], region)
+        if card["num"] in CARD_STAT:
+            big, capword = CARD_STAT[card["num"]]
+            bf = fit_oneline(d, f"card{card['num']} stat", big, serif_b,
+                             48, 28, card_w - 60)
+            bw2 = d.textlength(big, font=bf)
+            d.text((x + card_w - bw2, y + 42), big, font=bf, fill=col)
+            cf2 = fit_tracked(d, f"card{card['num']} stat caption",
+                              capword, dsans_b, 13, 10, 2, card_w - 60)
+            cw2 = tracked_width(d, capword, cf2, 2)
+            draw_tracked(d, x + card_w - cw2, y + 92, capword, cf2, 2,
+                         MID)
         hf, hlines, hlead = fit_box(d, f"card{card['num']} headline",
-                                    card["headline"], lsans_b, 27, 21,
-                                    card_w, 54, 1.04)
-        text_block(d, x, y + 30, hlines, hf, hlead)
-        bf, blines, blead = fit_box(d, f"card{card['num']} body",
-                                    card["body"], lsans, 20, 18, card_w, 90,
-                                    1.27)
-        text_block(d, x, y + 90, blines, bf, blead, fill=INK)
-        sy = y + 182
-        tier_w = tracked_width(d, card["tier"], dsans_b(13), 1.5) + 15
-        sf = fit_oneline(d, f"card{card['num']} source", card["source"],
-                         lsans, 17, 13, card_w - tier_w - 14)
-        d.text((x, sy), card["source"], font=sf, fill=MID)
-        tier_marker(d, x + card_w, sy + 2, card["tier"], size=13,
-                    tracking=1.5, sq=7)
-    DIV4 = 1316
+                                    card["headline"], lsans_b, 27, 19,
+                                    card_w, 42, 1.04)
+        text_block(d, x, y + 104, hlines, hf, hlead)
+        bf2, blines, blead = fit_box(d, f"card{card['num']} body",
+                                     card["body"], lsans, 20, 15, card_w,
+                                     66, 1.25)
+        text_block(d, x, y + 150, blines, bf2, blead, fill=INK)
+        sy = y + 220
+        pw = pill_width(d, card["tier"], 12)
+        sf3 = fit_oneline(d, f"card{card['num']} source", card["source"],
+                          lsans, 17, 13, card_w - pw - 14)
+        d.text((x, sy + 3), card["source"], font=sf3, fill=MID)
+        pill(d, x + card_w - pw, sy, card["tier"], 12)
+    DIV4 = 1392
     divider(DIV4)
 
-    # map + briefs band. The briefs are LOCKED at Liberation Sans 22 with
-    # 30px leading (11px / 15px at entry scale): items 14-25 run in one
-    # column beside the map, items 26-37 continue full-width below it.
-    hy = 1330
+    # map + briefs band. The briefs are LOCKED at Liberation Sans 22
+    # with 30px leading (11px / 15px at entry scale): items 14-25 run
+    # in one column beside the map, items 26-37 continue below it.
+    hy = 1404
     hf1 = fit_tracked(d, "map heading", "WHERE IT HAPPENED", dsans_b, 19,
                       15, 3, 850)
     draw_tracked(d, M, hy, "WHERE IT HAPPENED", hf1, 3, INK)
     ba_x = M + 850 + 32
     ba_w = right - ba_x
-    ah = "ALSO ON SUNDAY \u2014 24 MORE STORIES"
+    ah = "ALSO ON SUNDAY — 24 MORE STORIES"
     hf2 = fit_tracked(d, "also heading", ah, dsans_b, 19, 15, 3, ba_w)
     draw_tracked(d, ba_x, hy, ah, hf2, 3, INK)
-    ry = 1358
-    draw_map(d, M, ry, 850, 296)
+    ry = 1432
+    draw_map(d, M, ry, 850, 280)
     cap = "Each number is the story with that number on this page."
     cf = fit_oneline(d, "map caption", cap, lsans, 16, 13, 848)
-    d.text((M + 2, ry + 304), cap, font=cf, fill=MID)
+    d.text((M + 2, ry + 288), cap, font=cf, fill=MID)
+    # tier legend under the map: pill + its meaning, from STORIES.md
+    ly = ry + 316
+    lx = M + 2
+    for tier, gloss in [("CONFIRMED", "independently reported"),
+                        ("OFFICIAL", "authority's own statement"),
+                        ("REPORTED", "attributed claim")]:
+        w_ = pill(d, lx, ly, tier, 12)
+        gf = lsans(16)
+        gw = d.textlength(gloss, font=gf)
+        _register(f"legend {tier}", lx + w_ + 8 + gw, M + 850)
+        d.text((lx + w_ + 8, ly + 3), gloss, font=gf, fill=MID)
+        lx += w_ + 8 + gw + 22
 
     b1 = [(14 + j, ALSO[j]) for j in range(12)]          # beside the map
     b2 = [(26 + j, ALSO[12 + j]) for j in range(6)]      # below, left
@@ -740,55 +1108,40 @@ def render():
                   col_of[n])
     for j, (n, (p, t, s)) in enumerate(b1):
         draw_brief(d, ba_x, ry + j * 30, n, p, t, s, src_size)
-    ry2 = ry + 364
+    ry2 = ry + 368
     for j, (n, (p, t, s)) in enumerate(b2):
         draw_brief(d, M, ry2 + j * 30, n, p, t, s, src_size)
     for j, (n, (p, t, s)) in enumerate(b3):
         draw_brief(d, M + 880 + 30, ry2 + j * 30, n, p, t, s, src_size)
-    DIV5 = 1906
+    DIV5 = 1978
     divider(DIV5)
 
-    # region tally: one stacked bar, typographic labels under each segment
-    y0 = 1914
-    total = sum(n for _, n in REGION_TALLY)
-    seg_colors = [INK, OXB, SLATE, MID, INK_TINT, SLATE_TINT, MID_TINT]
-    cx = M
-    for k, (name, n) in enumerate(REGION_TALLY):
-        wseg = CW * n / total
-        d.rectangle([cx, y0, cx + wseg, y0 + 26], fill=seg_colors[k])
-        label = f"{name} {n}"
-        lf = fit_tracked(d, f"tally {name}", label, dsans_b, 14, 11, 1.5,
-                         wseg - 4)
-        tw = tracked_width(d, label, lf, 1.5)
-        draw_tracked(d, cx + (wseg - tw) / 2, y0 + 32, label, lf, 1.5, MID)
-        cx += wseg
-
     # date check: title at the left, the exclusions set beside it
-    y0 = 1972
-    dct = "DATE CHECK \u2014 LEFT OUT ON PURPOSE: OLDER NEWS, HOWEVER BIG"
-    tf, tlines, tlead = fit_box(d, "date check title", dct, dsans_b, 16, 13,
-                                440, 40, 1.2)
+    y0 = DIV5 + 8
+    dct = "DATE CHECK — LEFT OUT ON PURPOSE: OLDER NEWS, HOWEVER BIG"
+    tf, tlines, tlead = fit_box(d, "date check title", dct, dsans_b, 16,
+                                13, 440, 34, 1.2)
     text_block(d, M, y0, tlines, tf, tlead, fill=OXB)
-    dc = ("The Bayelsa boat sinking \u2014 Friday 20 Nov (only Sunday's probe "
-          "order is on this page) \u00b7 The Sparta II ship fire \u2014 Saturday "
-          "21 Nov \u00b7 The UK\u2013EU \u201clandmark\u201d deal \u2014 Friday 20 Nov "
-          "\u00b7 Brazil's election fallout \u2014 18 Nov \u00b7 \u201cCOP31 close "
-          "to a deal\u201d \u2014 Saturday's optimism, overtaken by Sunday's collapse")
-    df, dlines, dlead = fit_box(d, "date check body", dc, lsans, 18, 15,
-                                CW - 470, 44, 1.2)
-    text_block(d, M + 470, y0, dlines, df, dlead, fill=MID)
+    dc = ("The Bayelsa boat sinking — Friday 20 Nov (only Sunday's probe "
+          "order is on this page) · The Sparta II ship fire — Saturday "
+          "21 Nov · The UK–EU “landmark” deal — Friday 20 Nov "
+          "· Brazil's election fallout — 18 Nov · “COP31 close "
+          "to a deal” — Saturday's optimism, overtaken by Sunday's collapse")
+    df2, dlines, dlead = fit_box(d, "date check body", dc, lsans, 18, 15,
+                                 CW - 470, 36, 1.2)
+    text_block(d, M + 470, y0, dlines, df2, dlead, fill=MID)
 
     # folio line
-    d.line([M, 2022, right, 2022], fill=HAIR, width=2)
-    folio = "22.11.26 \u2014 37 STORIES"
-    ff = fit_tracked(d, "folio left", folio, dsans_b, 14, 12, 2, 400)
-    draw_tracked(d, M, 2028, folio, ff, 2, MID)
+    d.line([M, 2026, right, 2026], fill=HAIR, width=2)
+    folio = "22.11.26 — 37 STORIES"
+    ff = fit_tracked(d, "folio left", folio, dsans_b, 13, 12, 2, 400)
+    draw_tracked(d, M, 2030, folio, ff, 2, MID)
     foot = ("Every story here happened, or was first reported, on Sunday "
             "22 November 2026. Officials' counts and claims are attributed. "
             "Original drawings.")
-    ff2 = fit_oneline(d, "folio right", foot, lsans, 16, 13, CW - 430)
+    ff2 = fit_oneline(d, "folio right", foot, lsans, 13, 12, CW - 430)
     tw = d.textlength(foot, font=ff2)
-    d.text((right - tw, 2028), foot, font=ff2, fill=MID)
+    d.text((right - tw, 2030), foot, font=ff2, fill=MID)
 
     report_checks()
 
@@ -807,7 +1160,13 @@ def render():
     master = os.path.join(HERE, "entry-master.png")
     entry = os.path.join(HERE, "entry.png")
     img.save(master)
-    img.resize((1024, 1024), Image.LANCZOS).save(entry, optimize=True)
+    entry_img = img.resize((1024, 1024), Image.LANCZOS)
+    entry_img.save(entry, optimize=True)
+    if os.path.getsize(entry) > 900_000:
+        # keep the shipped file under the size aim: palette-quantize
+        entry_img.quantize(colors=256,
+                           dither=Image.FLOYDSTEINBERG).save(
+                               entry, optimize=True)
     print("wrote", master, os.path.getsize(master))
     print("wrote", entry, os.path.getsize(entry))
 
