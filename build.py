@@ -43,6 +43,21 @@ timeline markers could be placed without inventing them. Space
 for the footer box comes from tighter brief leading and section
 gaps in the bottom zones. Story content is otherwise unchanged.
 
+Version 7 applies the panel's critique of v6: the world map is
+redrawn as true coastline polygons with region labels, and its
+pins are de-overlapped on leader lines so every number reads;
+the standfirst strap stops repeating the three lead headlines
+and instead carries three other stories' headlines, verbatim
+from the cards; the three stat cards whose scene bands were
+dominated by their figure blocks (Serang, Wellington, Bitcoin)
+go scene-first, the figure shrunk to about three-fifths, so the
+strip's big figures keep the hierarchy; the COP31 delegate rows
+grow into the panel's dead ground under the clock, their bloc
+nameplates set at card-headline scale; and the Bahrain panel's
+two impact bursts are separated, one centred on each base.
+Story content is unchanged apart from the strap's new words,
+which are themselves frozen card headlines.
+
 The page is drawn programmatically with Pillow at 2048x2048
 (entry-master.png) and downscaled to the 1024x1024 entry.png that
 main.py ships. Every text block is measured and fitted into its zone;
@@ -629,36 +644,41 @@ def art_cop(d, x, y, w_, h):
            width=3)
     # the gavel, resting on the desk at the document's bottom-left:
     # a capped head on its sound block, a two-tone handle angled
-    # down across the desk edge
-    d.rectangle([dx + 20, y + 252, dx + 62, y + 257], fill=(96, 70, 44))
-    d.rectangle([dx + 24, y + 235, dx + 60, y + 251], fill=(110, 78, 46))
-    d.rectangle([dx + 19, y + 235, dx + 26, y + 251], fill=(84, 58, 34))
-    d.rectangle([dx + 58, y + 235, dx + 65, y + 251], fill=(84, 58, 34))
-    d.line([dx + 24, y + 239, dx + 60, y + 239], fill=(196, 156, 104),
+    # down across the desk edge (v7: scaled up with the assembly)
+    d.rectangle([dx + 18, y + 253, dx + 70, y + 258], fill=(96, 70, 44))
+    d.rectangle([dx + 23, y + 232, dx + 66, y + 252], fill=(110, 78, 46))
+    d.rectangle([dx + 18, y + 232, dx + 26, y + 252], fill=(84, 58, 34))
+    d.rectangle([dx + 63, y + 232, dx + 71, y + 252], fill=(84, 58, 34))
+    d.line([dx + 23, y + 236, dx + 66, y + 236], fill=(196, 156, 104),
            width=2)
-    d.line([dx + 62, y + 243, dx + 102, y + 255], fill=(96, 66, 40),
-           width=8)
-    d.line([dx + 62, y + 243, dx + 102, y + 255], fill=(172, 130, 82),
-           width=4)
-    # delegate seats from behind: a back row of four, then a front
-    # row of three carrying the bloc nameplates
-    zx = x + 424
-    for i in range(4):
-        sx = zx + i * 42
-        d.ellipse([sx + 8, y + 208, sx + 25, y + 225], fill=(70, 62, 55))
-        d.rectangle([sx, y + 222, sx + 33, y + 250], fill=(96, 90, 84))
-    fp = dsans_b(9)
-    for i, name in enumerate(["EU", "G77", "BRICS"]):
-        sx = zx + 14 + i * 54
-        d.ellipse([sx + 10, y + 230, sx + 30, y + 250],
+    d.line([dx + 66, y + 241, dx + 104, y + 254], fill=(96, 66, 40),
+           width=9)
+    d.line([dx + 66, y + 241, dx + 104, y + 254], fill=(172, 130, 82),
+           width=5)
+    # v7: the delegate assembly grows into the dead ground under
+    # the clock — a back row of four bigger delegates, then a front
+    # row of three whose bloc nameplates are set at card-headline
+    # scale so they read at entry size
+    back_shades = [(96, 90, 84), (104, 98, 92), (92, 86, 80),
+                   (100, 94, 88)]
+    for i, off in enumerate([452, 494, 534, 574]):
+        cx = x + off
+        d.ellipse([cx - 11, y + 208, cx + 11, y + 230],
+                  fill=(70, 62, 55))
+        d.rectangle([cx - 19, y + 228, cx + 19, y + 248],
+                    fill=back_shades[i])
+    fp = dsans_b(19)
+    for name, cx, pw in [("EU", x + 436, 44), ("G77", x + 487, 56),
+                         ("BRICS", x + 555, 72)]:
+        d.ellipse([cx - 13, y + 221, cx + 13, y + 247],
                   fill=(43, 38, 34))
-        d.rectangle([sx, y + 246, sx + 40, y + 268], fill=(58, 52, 47))
-        d.rectangle([sx + 3, y + 253, sx + 37, y + 264],
-                    fill=(252, 250, 244))
+        d.rectangle([cx - 26, y + 243, cx + 26, y + 264],
+                    fill=(58, 52, 47))
+        d.rectangle([cx - pw / 2, y + 251, cx + pw / 2, y + 271],
+                    fill=(252, 250, 244), outline=MID, width=1)
         _register(f"cop nameplate {name}",
-                  d.textlength(name, font=fp), 34)
-        d.text((sx + 20, y + 258), name, font=fp, fill=INK,
-               anchor="mm")
+                  d.textlength(name, font=fp), pw - 8)
+        d.text((cx, y + 261), name, font=fp, fill=INK, anchor="mm")
 
 
 def art_gulf(d, x, y, w_, h):
@@ -721,9 +741,12 @@ def art_gulf(d, x, y, w_, h):
     for rt in (r1, r3):
         dashed_bezier(d, *rt, RED, 5)
         arrowhead(*rt)
-    starburst(d, bx, by, 30, ORANGE)
+    # v7: two clearly separated bursts, one centred on each base —
+    # at v6 sizes (30 + 22 against centres ~41px apart) they merged
+    # into a single blob; 19 + 17 leaves a visible gap between them
+    starburst(d, bx, by, 19, ORANGE)
     d.ellipse([bx - 5, by - 5, bx + 5, by + 5], fill=INK)
-    starburst(d, ax_, ay_, 22, ORANGE)
+    starburst(d, ax_, ay_, 17, ORANGE)
     d.ellipse([ax_ - 4, ay_ - 4, ax_ + 4, ay_ + 4], fill=INK)
     # a small red tag in the open sea south-east of the island
     ftg = dsans_b(14)
@@ -1241,52 +1264,222 @@ def draw_card_band(d, x, y, w_, h, card):
 
 
 # ---------------------------------------------------------------- the map
-LAND = [
-    # (lon, lat, rx, ry) ellipses approximating the continents
-    (-100, 49, 40, 15), (-152, 65, 13, 6), (-83, 14, 9, 3),
-    (-62, -11, 11.5, 16), (-68, -29, 7, 10),
-    (15, 52, 17, 9), (15, 64, 10, 5.5), (-2, 54, 3.2, 4.2), (-4, 40.5, 6, 4),
-    (20, 7, 16.5, 20), (47, 5, 6.5, 6), (47, -19, 3, 6.5),
-    (85, 51, 50, 14.5), (78, 21, 8.5, 9.5), (102, 15, 7.5, 8.5),
-    (45, 24, 9.5, 7), (138, 37, 5.5, 5.5), (112, -2, 13, 3.2),
-    (134, -25, 13.5, 8), (172, -42, 3, 4.5), (77, 8.5, 4, 3.5),
-    (127, 37, 3.5, 3.5), (140, 37, 3.5, 4.5),
+# v7: the landmasses are true coastline polygons — (lon, lat) vertices
+# projected with the same linear map as the pins — replacing the v4–v6
+# ellipse-mask dots that read as pale blobs. Eurasia is one loop (its
+# interior borders are not coasts); the Black Sea, the Caspian and
+# the Persian Gulf are carved back out as sea bites.
+COAST = [
+    # North America, Pacific side down to Panama, Atlantic side back
+    [(-168, 66), (-164, 60), (-158, 56), (-152, 58), (-146, 60),
+     (-140, 60), (-136, 56), (-131, 53), (-127, 50), (-124, 45),
+     (-124, 39), (-121, 34), (-116, 32), (-112, 29), (-109, 25),
+     (-105, 21), (-101, 18), (-96, 15.5), (-92, 14.5), (-87, 13),
+     (-83, 9), (-79, 9), (-82, 9.5), (-83, 15), (-87, 16),
+     (-88, 21.5), (-90.5, 21.5), (-91, 19), (-94, 18.5), (-96, 19),
+     (-97, 24), (-97, 27), (-93, 30), (-89, 30), (-85, 29.5),
+     (-82, 28), (-81, 25), (-80, 27), (-79, 31), (-76, 35),
+     (-74, 39), (-71, 41), (-69, 44), (-65, 44), (-60, 46),
+     (-63, 49), (-60, 52), (-64, 58), (-68, 58), (-77, 62),
+     (-81, 64), (-82, 66), (-85, 68), (-90, 66), (-93, 69),
+     (-105, 68), (-120, 69), (-135, 70), (-150, 70), (-158, 71),
+     (-164, 69)],
+    # South America
+    [(-77, 7), (-75, 10), (-72, 12), (-68, 11), (-64, 10.5),
+     (-60, 8.5), (-55, 6), (-51, 4), (-50, 1), (-46, -1),
+     (-42, -2.5), (-38, -5), (-35, -7.5), (-37, -11), (-39, -14),
+     (-39, -17), (-40, -21), (-42, -23), (-46, -25), (-49, -28),
+     (-52, -33), (-54, -35), (-57, -39), (-58, -40), (-62, -41),
+     (-62, -44), (-65, -45), (-65, -47), (-67, -50), (-67, -52),
+     (-66, -55), (-69, -54), (-71, -52), (-72, -49), (-73, -46),
+     (-74, -42), (-73, -37), (-72, -32), (-70, -27), (-70, -22),
+     (-70, -18.5), (-72, -17), (-75, -15), (-76, -13), (-78, -8),
+     (-80, -5), (-81, -1), (-80, 2), (-79, 5)],
+    # Africa, Atlantic side down, round the Cape, up the east coast
+    [(-6, 35), (-9.5, 31), (-9.5, 28), (-13, 27.5), (-16, 24),
+     (-17, 20), (-17, 16), (-16, 12), (-13.5, 9), (-12, 8),
+     (-7.5, 4.5), (-3, 5), (2, 6), (6, 4.5), (8.5, 4), (9, -1),
+     (11, -4), (12.5, -7), (13, -11), (12, -15), (12.5, -18),
+     (14, -21), (15, -25), (16.5, -29), (18, -32), (19.5, -34.5),
+     (20, -35), (26, -34), (30, -31), (32, -28.5), (35, -25),
+     (35.5, -22), (36, -19), (37, -16), (39, -13), (40, -10),
+     (40.5, -6), (42, -2), (46, 0), (51, 5), (51, 10.5),
+     (48, 11.5), (44, 11), (42, 13), (40, 15), (38.5, 18),
+     (37, 21), (35.5, 23.5), (34, 26), (33, 28), (32.5, 31),
+     (30, 31.2), (25, 32), (20, 32.2), (15, 32.4), (11, 33.5),
+     (10, 34), (10, 37), (5, 36.8), (0, 36), (-2, 35)],
+    # Madagascar
+    [(44, -16), (46.5, -15), (49, -13.5), (50, -16), (49.5, -19),
+     (47.5, -23), (46, -25), (44.5, -24.5), (43.5, -21), (43, -18),
+     (44, -16.5)],
+    # Eurasia, one loop: Arctic coast east, Pacific down, the south
+    # coasts west, round Arabia, up the Levant, west along the Med
+    [(-9, 37), (-9, 43), (-5, 48), (-1.5, 49.5), (1, 51), (3.5, 53),
+     (6, 53.5), (8, 55), (8, 57), (5.5, 58), (5, 60), (6, 62),
+     (11, 64), (14, 67), (18, 69), (23, 70), (29, 71), (33, 69),
+     (40, 66.5), (45, 68), (52, 68.5), (60, 69.5), (68, 70),
+     (75, 72), (82, 73), (90, 75), (97, 76), (105, 77), (110, 75),
+     (118, 73), (125, 72), (132, 72), (140, 72), (148, 71),
+     (155, 70), (162, 70), (170, 67), (178, 65), (178, 63),
+     (173, 62), (169, 60), (162, 59), (158, 53), (156, 50),
+     (152, 56), (148, 59), (143, 55), (142, 50), (141, 45),
+     (140, 40), (139, 35), (135, 34.5), (130, 33), (126, 36),
+     (122, 37.5), (120, 34), (120, 30), (121, 26), (116, 23),
+     (110, 20), (108, 16), (107, 12), (106, 8.5), (103.5, 6),
+     (101, 6.5), (99, 9), (98, 13), (96, 15.5), (94, 16.5),
+     (91.5, 22), (89, 21.5), (86.5, 20), (84, 18.5), (81, 15.5),
+     (80, 13.5), (77.5, 8), (75.5, 11.5), (73, 16), (72, 19.5),
+     (69, 22), (66.5, 25), (61, 25), (57.5, 26.5), (48.5, 29.8),
+     (50.5, 26.3), (52, 24.3), (55.5, 24.3), (59.5, 22.3),
+     (57.8, 19), (55, 17), (52.5, 15), (48, 14), (45, 12.3),
+     (43, 11.8), (42, 14), (40, 17.5), (38.5, 21), (36.5, 25),
+     (35, 28.5), (36, 31), (35.8, 33.3), (36.2, 36.3),
+     (33.5, 36.2), (30, 36.3), (27.2, 36.8), (26.8, 38.3),
+     (23.5, 36.7), (22.8, 39), (20, 39.8), (19.3, 41.8),
+     (18.2, 40.2), (16.2, 38.4), (15.7, 38), (16.3, 39.4),
+     (15, 40.8), (13, 42.5), (11, 44.2), (8.5, 44.2), (7.4, 43.6),
+     (4, 43.2), (3, 42.3), (2.2, 41.3), (1, 39.5), (0, 38.8),
+     (-0.7, 37.9), (-2.2, 36.7), (-5.4, 35.9)],
+    # Britain, Ireland, Iceland
+    [(-5.2, 50), (-3.5, 53.3), (-5, 55), (-5.7, 58.3), (-3, 58.5),
+     (-1.5, 57.5), (-0.5, 54.5), (1.3, 51.5), (0, 50.8)],
+    [(-10.2, 51.8), (-8, 51.5), (-6, 52.2), (-5.6, 54.3),
+     (-7, 55.2), (-9.8, 54.1), (-10.3, 53)],
+    [(-22.5, 64), (-21, 63.5), (-15, 63.5), (-13.5, 64.5),
+     (-14.5, 66.3), (-20, 66.5), (-22.8, 65.5)],
+    # Japan
+    [(130, 31), (131.5, 32.5), (133, 33.8), (135.5, 34.3),
+     (137, 34.8), (138.5, 35.5), (140, 35.8), (140.5, 38),
+     (141.5, 40), (141.8, 43), (143.5, 43.5), (142, 44.8),
+     (140.5, 44.5), (139.8, 41), (139, 37.5), (136.5, 35.3),
+     (133.5, 34), (131, 32.8)],
+    # Indonesia and New Guinea
+    [(95.3, 5.5), (97.5, 5.2), (100, 2), (102.5, 0), (104.5, -2.5),
+     (105.8, -5.8), (104, -5.5), (101.5, -3.5), (99, -0.5),
+     (96.8, 3.5)],
+    [(105.5, -6.8), (108, -6.7), (111, -6.9), (114.3, -7.6),
+     (114.5, -8.6), (111, -8), (107.5, -7.8), (105.3, -7)],
+    [(109, 1), (109.5, 2.5), (111.5, 3.2), (114, 4.2), (116.5, 6.5),
+     (118, 3), (119, 0.5), (117.5, -1.5), (116, -3.2), (113, -3.4),
+     (110, -2.5), (108.8, -0.5)],
+    [(119, -0.5), (120.5, -0.8), (120, -2.5), (119.3, -3.5),
+     (118.8, -1.5)],
+    [(130.8, -1), (133, -1.8), (136, -2.3), (138.5, -1.9),
+     (141, -2.8), (143, -3.5), (146, -5.5), (148.5, -8),
+     (150.5, -10), (147.5, -9.5), (144, -8), (140, -7.5),
+     (136, -6), (132.5, -3.8), (131, -2.5)],
+    # the Philippines, Cuba
+    [(120, 18.3), (121, 18), (121.8, 16), (122.2, 14), (121.5, 13.5),
+     (122, 11.5), (122.5, 10), (121, 11), (120.5, 13.5),
+     (119.9, 16)],
+    [(-84.8, 22.5), (-81, 23), (-77, 21.5), (-74.2, 20.2),
+     (-74.5, 20), (-78, 21), (-81.5, 22.3), (-84.5, 21.9)],
+    # Australia
+    [(113.5, -22), (114, -28), (115, -33.5), (118, -35), (124, -33),
+     (129, -31.8), (132, -32), (135, -34.8), (137, -35), (139, -37),
+     (140, -38.5), (145, -38.3), (147, -38), (150, -37), (153, -30.8),
+     (153, -27), (151, -24), (149, -20), (146, -19), (143.5, -15),
+     (142, -11), (142, -14.5), (141, -17.5), (140, -17.8),
+     (136.5, -15), (135, -12), (132, -11), (130, -12.5), (126, -14),
+     (122, -17), (118, -20), (114.8, -21.5)],
+    # New Zealand, both islands
+    [(172.7, -34.5), (175, -36.5), (178, -37.5), (176.8, -39.5),
+     (174.8, -41.3), (173.8, -39.2), (172.7, -37)],
+    [(166.5, -46), (168, -46.3), (170.5, -45.5), (171.5, -43.5),
+     (173.5, -42), (172, -41.5), (169, -43.8), (167.5, -45.8)],
 ]
 
+SEA_BITES = [
+    # the Black Sea
+    [(28, 41.3), (32, 41.2), (36, 41), (39.5, 41.3), (41.5, 43),
+     (40, 45.8), (36, 46.8), (32, 46.4), (28.5, 44.8), (27.8, 43)],
+    # the Caspian Sea
+    [(49.8, 37), (52, 37.8), (53.8, 39.5), (54, 42), (53.5, 44.8),
+     (51.5, 46.8), (50, 45), (48.8, 41.5), (49, 38.5)],
+    # the Persian Gulf
+    [(48.5, 29.8), (51, 28.8), (53.5, 27.5), (56.5, 26.8),
+     (56.8, 26.2), (53, 25.3), (50.3, 25.8), (48.7, 27.8)],
+]
 
-def is_land(lon, lat):
-    for clon, clat, rx, ry in LAND:
-        if ((lon - clon) / rx) ** 2 + ((lat - clat) / ry) ** 2 <= 1.0:
-            return True
-    return False
+MAP_LAND = (226, 206, 164)
+MAP_COAST = (168, 148, 106)
+MAP_LABELS = [("AMERICAS", -110, 48), ("EUROPE", 8, 63),
+              ("ASIA", 100, 52), ("AFRICA", 21, -10),
+              ("MIDDLE EAST", 50, 7.5), ("OCEANIA", 134, -27)]
 
 
 def draw_map(d, x, y, w_, h):
-    """Filled world map: dense pale dots merge into landmasses on a
-    light ocean panel; pins are coloured by region, numbered in white."""
+    """World map: drawn coastline polygons in a deeper land tone on
+    the ocean panel, region labels on the landmasses, and the pins
+    at their true lon/lat anchors — where pins would overlap, the
+    circles are relaxed apart and tied back to their anchors with
+    thin leader lines, so every number reads at entry scale."""
     d.rectangle([x, y, x + w_, y + h], fill=OCEAN)
-    cols = 148
-    sx = w_ / cols
-    rows = int(h / sx)
-    sy = h / rows
-    r = sx * 0.62
-    for r_ in range(rows):
-        lat = 76 - (r_ + 0.5) * (124 / rows)
-        for c_ in range(cols):
-            lon = -172 + (c_ + 0.5) * (356 / cols)
-            if is_land(lon, lat):
-                cx, cy = x + (c_ + 0.5) * sx, y + (r_ + 0.5) * sy
-                d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=LAND_TONE)
+
+    def P(lon, lat):
+        return (x + (lon + 172) / 356 * w_, y + (76 - lat) / 124 * h)
+
+    for poly in COAST:
+        pts = [P(lon, lat) for lon, lat in poly]
+        d.polygon(pts, fill=MAP_LAND)
+        d.line(pts + [pts[0]], fill=MAP_COAST, width=2)
+    for poly in SEA_BITES:
+        d.polygon([P(lon, lat) for lon, lat in poly], fill=OCEAN)
     d.rectangle([x, y, x + w_, y + h], outline=INK, width=2)
-    pf = dsans_b(13)
-    for num, (lon, lat) in PINS.items():
-        px = x + (lon + 172) / 356 * w_
-        py = y + (76 - lat) / 124 * h
-        rr = 11.5
-        d.ellipse([px - rr, py - rr, px + rr, py + rr],
-                  fill=REGION_COLORS[PIN_REGION[num]], outline=PAPER,
+    lf = dsans_b(16)
+    for name, lon, lat in MAP_LABELS:
+        cx, cy = P(lon, lat)
+        tw = tracked_width(d, name, lf, 2)
+        _register(f"map label {name}", tw, w_)
+        draw_tracked(d, cx - tw / 2, cy - 8, name, lf, 2, (94, 86, 64))
+    # pins: relax overlapping circles apart (deterministic order),
+    # never more than 44px from the anchor, never off the panel
+    anchors = {num: P(lon, lat) for num, (lon, lat) in PINS.items()}
+    pos = dict(anchors)
+    nums = sorted(PINS)
+    R = 13
+    for _ in range(90):
+        moved = False
+        for i, a in enumerate(nums):
+            for b in nums[i + 1:]:
+                ax_, ay_ = pos[a]
+                bx_, by_ = pos[b]
+                dx, dy = bx_ - ax_, by_ - ay_
+                dist = math.hypot(dx, dy)
+                if dist < 2 * R + 2:
+                    if dist < 0.01:
+                        dx, dy, dist = 1.0, 0.3, math.hypot(1.0, 0.3)
+                    push = (2 * R + 2 - dist) / 2
+                    ux, uy = dx / dist, dy / dist
+                    pos[a] = (ax_ - ux * push, ay_ - uy * push)
+                    pos[b] = (bx_ + ux * push, by_ + uy * push)
+                    moved = True
+        for n in nums:
+            ax_, ay_ = anchors[n]
+            px_, py_ = pos[n]
+            dx, dy = px_ - ax_, py_ - ay_
+            dd = math.hypot(dx, dy)
+            if dd > 44:
+                px_, py_ = ax_ + dx / dd * 44, ay_ + dy / dd * 44
+            pos[n] = (min(max(px_, x + R + 1), x + w_ - R - 1),
+                      min(max(py_, y + R + 1), y + h - R - 1))
+        if not moved:
+            break
+    pf = dsans_b(14)
+    for n in nums:
+        ax_, ay_ = anchors[n]
+        px_, py_ = pos[n]
+        if math.hypot(px_ - ax_, py_ - ay_) > 4:
+            d.line([ax_, ay_, px_, py_], fill=(96, 86, 72), width=2)
+            d.ellipse([ax_ - 3, ay_ - 3, ax_ + 3, ay_ + 3],
+                      fill=REGION_COLORS[PIN_REGION[n]], outline=PAPER,
+                      width=1)
+    for n in nums:
+        px_, py_ = pos[n]
+        d.ellipse([px_ - R, py_ - R, px_ + R, py_ + R],
+                  fill=REGION_COLORS[PIN_REGION[n]], outline=PAPER,
                   width=2)
-        d.text((px, py), str(num), font=pf, fill=WHITE, anchor="mm")
+        d.text((px_, py_), str(n), font=pf, fill=WHITE, anchor="mm")
 
 
 def brief_width(d, num, place, txt, src, src_size):
@@ -1352,9 +1545,11 @@ def render():
     ew2 = d.textlength(eb2, font=ef2)
     d.text((right - ew2, 98), eb2, font=ef2, fill=MID)
 
-    # standfirst: the three lead headlines, italic, diamond-separated
-    stand = ("COP31 ends with no deal at all ◆ Iran strikes US bases in "
-             "Bahrain ◆ Drones hit Khartoum, and a UN building")
+    # standfirst: v7 — three OTHER stories' headlines, verbatim from
+    # the frozen cards, italic, diamond-separated (the lead headlines
+    # already run as the lead headlines and in the stat strip)
+    stand = ("Fifty missing in the factory ruins ◆ Bitcoin bounces "
+             "above $60,000 ◆ “Big bosses can't decide fate”")
     sf = fit_oneline(d, "standfirst", stand, serif_i, 30, 24, CW)
     d.text((M + 2, 152), stand, font=sf, fill=MID)
     DIV1 = 186
@@ -1476,6 +1671,11 @@ def render():
                                            font=serif_b(sz)) > card_w - 60:
                 sz -= 1
             block_w = d.textlength(big0, font=serif_b(sz)) + 22
+            if card["num"] in (4, 7, 9):
+                # v7: scene first — the figure block shrinks to
+                # about three-fifths, the scene takes at least 65%
+                # of the band; the stat strip keeps the big figure
+                block_w = min(int(block_w * 0.6), card_w - 225)
         draw_card_band(d, x, band_y, card_w - block_w, 60, card)
         if block_w:
             d.rectangle([x + card_w - block_w, band_y, x + card_w,
@@ -1484,8 +1684,12 @@ def render():
                          x + card_w - block_w + 3, band_y + 59],
                         fill=col)
             big, capword = CARD_STAT[card["num"]]
-            bf = fit_oneline(d, f"card{card['num']} stat", big, serif_b,
-                             48, 28, card_w - 60)
+            if card["num"] in (4, 7, 9):
+                bf = fit_oneline(d, f"card{card['num']} stat", big,
+                                 serif_b, 48, 16, block_w - 22)
+            else:
+                bf = fit_oneline(d, f"card{card['num']} stat", big,
+                                 serif_b, 48, 28, card_w - 60)
             bw2 = d.textlength(big, font=bf)
             d.text((x + card_w - bw2, y + 38), big, font=bf, fill=col)
             cf2 = fit_tracked(d, f"card{card['num']} stat caption",
